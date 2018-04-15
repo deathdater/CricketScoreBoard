@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_team_details"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:background="@color/Color_Background"
+    tools:context="com.example.android.cricketscoreboard.views.TeamDetails">
+
+   <ScrollView
+       android:layout_width="match_parent"
+       android:layout_height="match_parent"
+       android:background="@drawable/rectangle">
+       <RelativeLayout
+           android:layout_width="match_parent"
+           android:layout_height="match_parent">
+    <TextView
+        android:id="@+id/teamDetails_text_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+
+        android:layout_centerHorizontal="true"
+        android:fontFamily="monospace"
+        android:text="New Team Details"
+        android:textAlignment="center"
+        android:textSize="36sp" />
+    <ImageView
+        android:id="@+id/team_logo_img"
+        android:layout_width="250px"
+        android:layout_height="250px"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@id/teamDetails_text_view"
+
+        />
+    <TextView
+        android:id="@+id/teamLogo_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/teamDetails_text_view"
+        android:layout_toRightOf="@id/team_logo_img"
+        android:fontFamily="monospace"
+        android:paddingTop="20dp"
+        android:text="Team Logo Image"
+        android:textAlignment="center"
+
+        android:textSize="15sp" />
+
+
+
+    <Button
+    android:id="@+id/browse_logo"
+    android:layout_width="match_parent"
+    android:layout_height="50dp"
+    android:layout_below="@id/teamLogo_text_view"
+    android:layout_toRightOf="@id/team_logo_img"
+    android:fontFamily="monospace"
+    android:onClick="fetchImage"
+    android:text="Browse" />
+
+    <CheckBox
+        android:id="@+id/default_logo_checkbox"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_below="@id/browse_logo"
+        android:layout_toRightOf="@id/team_logo_img"
+        android:fontFamily="monospace"
+        android:text="Use Default" />
+
+    <TextView
+        android:id="@+id/teamName_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_marginTop="10dp"
+        android:layout_below="@id/default_logo_checkbox"
+        android:fontFamily="monospace"
+        android:paddingBottom="5dp"
+        android:paddingTop="5dp"
+        android:text="Team Name"
+        android:textSize="20sp"
+        />
+<EditText
+    android:id="@+id/teamName_edit_text"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_below="@id/teamName_text_view"
+    android:inputType="textPersonName"
+    android:lines="1"
+    android:textAllCaps="false"
+    android:textStyle="bold"
+    android:typeface="monospace"
+    android:hapticFeedbackEnabled="true"
+     />
+
+    <TextView
+        android:id="@+id/playerCount_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/teamName_edit_text"
+        android:fontFamily="monospace"
+        android:paddingBottom="5dp"
+        android:paddingTop="5dp"
+        android:visibility="gone"
+        android:text="Number of Players"
+        android:textSize="20sp"
+        />
+
+    <NumberPicker
+        android:id="@+id/playerCount_number_picker"
+        android:layout_width="wrap_content"
+        android:layout_height="100dp"
+        android:layout_below="@id/playerCount_text_view"
+        android:scrollbars="horizontal|vertical"
+        android:visibility="gone"
+        android:showDividers="middle"
+        android:soundEffectsEnabled="true">
+
+    </NumberPicker>
+
+    <Button
+        android:id="@+id/teamDetails_save_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/playerCount_number_picker"
+        android:layout_centerHorizontal="true"
+        android:fontFamily="monospace"
+        android:text="Save"
+        android:onClick="onSaveClick"
+        android:textStyle="bold" />
+
+       </RelativeLayout>
+   </ScrollView>
+
+</RelativeLayout>

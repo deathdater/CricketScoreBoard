@@ -1,0 +1,217 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_gravity="center_horizontal"
+    android:orientation="vertical"
+    android:scrollbarStyle="insideOverlay"
+    android:visibility="visible"
+    app:layout_scrollFlags="scroll"
+    tools:context="com.example.android.cricketscoreboard.views.ScorerTabActivity$PlaceholderFragment">
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+
+        <RelativeLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
+
+            <TextView
+                android:id="@+id/bowlerName_lbl"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Bowler Name" />
+
+            <Spinner
+                android:id="@+id/bowlerName_spinner"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+
+                android:layout_below="@id/bowlerName_lbl"
+                android:entries="@array/city_array"
+                android:prompt="@string/city_prompt" />
+
+            <TextView
+                android:id="@+id/overStatus_lbl"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/bowlerName_spinner"
+                android:text="Current Over status" />
+
+            <ProgressBar
+                android:id="@+id/status_CurrentOver"
+                style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/overStatus_lbl"
+                android:layout_centerHorizontal="true"
+                android:max="6"
+                android:progress="3"
+                android:progressTint="@color/colorPrimaryDark"
+                android:visibility="visible" />
+
+            <TextView
+                android:id="@+id/oversBowled_field"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/status_CurrentOver"
+                android:layout_centerHorizontal="true"
+                android:paddingBottom="20dp"
+                android:paddingTop="10dp"
+                android:text="12.1 Overs"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/nxtBall_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/oversBowled_field"
+                android:layout_centerHorizontal="true"
+                android:text="Next Ball" />
+
+        </RelativeLayout>
+
+
+        <RelativeLayout
+            android:id="@+id/bowlerDetails_scorerTab"
+
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
+
+            <TextView
+                android:id="@+id/runsFromBat_lbl"
+
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Runs from Bat" />
+
+
+            <RadioGroup
+                android:id="@+id/runsScored_radioGrp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/runsFromBat_lbl"
+                android:layout_centerVertical="true"
+                android:orientation="vertical">
+
+                <RadioButton
+                    android:id="@+id/radioBtn_ZeroRun"
+
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0" />
+
+                <RadioButton
+                    android:id="@+id/radioBtn_OneRun"
+
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="1" />
+
+                <RadioButton
+                    android:id="@+id/radioBtn_TwoRun"
+
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="2" />
+
+                <RadioButton
+                    android:id="@+id/radioBtn_ThreeRun"
+
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="3" />
+
+                <RadioButton
+                    android:id="@+id/radioBtn_FourRun"
+
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+
+                    android:text="4" />
+
+                <RadioButton
+                    android:id="@+id/radioBtn_FiveRun"
+
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="5" />
+
+                <RadioButton
+                    android:id="@+id/radioBtn_SixRun"
+
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="6" />
+            </RadioGroup>
+
+            <Button
+                android:id="@+id/wideBowl_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/runsFromBat_lbl"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:text="WIDE BALL" />
+
+            <Button
+                android:id="@+id/noBowl_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/wideBowl_btn"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+
+                android:text="No BALL" />
+
+            <Button
+                android:id="@+id/byes_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/noBowl_btn"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+
+                android:text="BYES" />
+
+            <Button
+                android:id="@+id/legByes_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/byes_btn"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:text="LEG BYES" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
+
+            <Button
+                android:id="@+id/out_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:text="OUT!!" />
+
+            <Button
+                android:id="@+id/retd_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/out_btn"
+                android:layout_centerHorizontal="true"
+                android:text="RETD." />
+        </RelativeLayout>
+
+    </LinearLayout>
+
+
+</ScrollView>

@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_landing_page"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:background="@color/Color_Background"
+    tools:context="com.example.android.cricketscoreboard.views.LandingPageActivity">
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_centerHorizontal="true"
+    android:layout_centerVertical="true"
+    android:layout_gravity="center_horizontal"
+    android:orientation="vertical"
+    android:background="@color/Color_Background"
+    tools:context="com.example.android.cricketscoreboard.views.LandingPageActivity">
+
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:paddingTop="5dp"
+    android:layout_weight="0.1"
+    >
+
+    <Button
+        android:id="@+id/teamDetails_btn"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:background="@color/Color_buttonBackPush2a"
+        android:drawableTop="@drawable/conference_2"
+        android:fadingEdge="horizontal|vertical"
+        android:fontFamily="monospace"
+        android:onClick="teamDetails"
+
+        android:text="@string/team_details_string"
+        android:textColor="@color/Color_ButtonText"
+        android:textStyle="bold" />
+
+    <Button
+        android:id="@+id/playerDetails_btn"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:drawableTop="@drawable/user_male_circle_2"
+        android:background="@color/Color_buttonBackPush"
+        android:fontFamily="monospace"
+        android:onClick="onCreateContextMenu"
+        android:text="@string/player_details_string"
+        android:textColor="@color/Color_ButtonText"
+        android:textStyle="bold"
+
+        />
+
+</LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingTop="5dp"
+        android:layout_weight="0.1">
+
+        <Button
+            android:id="@+id/groundDetails_btn"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@color/Color_buttonBackPusha"
+            android:fontFamily="monospace"
+            android:onClick="groundDetails"
+            android:drawableTop="@drawable/geo_fence_2"
+            android:text="@string/ground_details_string"
+            android:textColor="@color/Color_ButtonText"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/scheduleMatch_btn"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@color/Color_buttonBackPush1a"
+            android:fontFamily="monospace"
+            android:onClick="scheduleMatches"
+            android:text="@string/schedule_match_string"
+            android:drawableTop="@drawable/overtime_2"
+            android:textColor="@color/Color_ButtonText"
+            android:textStyle="bold" />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingTop="5dp"
+        android:layout_weight="3">
+        <Button
+            android:id="@+id/viewMatchSummary_btn"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="2"
+            android:background="@color/Color_buttonBackPush2a"
+            android:fontFamily="monospace"
+            android:text="@string/viewMatchSummary_string"
+            android:drawableTop="@drawable/match_summary"
+            android:textColor="@color/Color_ButtonText"
+            android:textStyle="bold" />
+        <Button
+            android:id="@+id/setRules_btn"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="2"
+            android:background="@color/Color_buttonBackPush2"
+            android:fontFamily="monospace"
+            android:text="@string/set_rules_string"
+            android:drawableTop="@drawable/checklist"
+            android:textColor="@color/Color_ButtonText"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+        <Button
+            android:id="@+id/startMatch_btn"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@color/Color_buttonBackPush3"
+            android:fontFamily="monospace"
+            android:onClick="startMatch"
+            android:text="@string/start_match_string"
+            android:textColor="@color/Color_ButtonText"
+            android:drawableTop="@drawable/finish_flag_2"
+            android:textStyle="bold" />
+</LinearLayout>
+
+
+
+
+    </ScrollView>
+
+

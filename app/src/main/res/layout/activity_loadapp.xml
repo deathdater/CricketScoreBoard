@@ -1,0 +1,46 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/Color_Background"
+    android:onClick="mainScreen"
+    tools:context="com.example.android.cricketscoreboard.views.LoadAppActivity">
+
+    <!-- The primary full-screen view. This can be replaced with whatever view
+         is needed to present your content, e.g. VideoView, SurfaceView,
+         TextureView, etc. -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        >
+    <TextView
+        android:id="@+id/fullscreenTag_text_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:layout_centerHorizontal="true"
+        android:keepScreenOn="false"
+        android:text="@string/load_content"
+
+        android:textColor='@color/Color_Heading'
+        android:textSize="@dimen/dimen_MainHeading"
+        android:fontFamily="@string/string_App_font"
+        android:textStyle="bold" />
+    <TextView
+        android:id="@+id/fullscreenTapHint_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:keepScreenOn="true"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:text="Tap on the screen to continue.."
+        android:textColor="@color/Color_Heading"
+        android:textSize="15sp"
+        android:fontFamily="@string/string_App_font"
+        android:textStyle="bold" />
+    <!-- This FrameLayout insets its children based on system windows using
+         android:fitsSystemWindows. -->
+    </RelativeLayout>
+</FrameLayout>

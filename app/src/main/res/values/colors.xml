@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#8bc34a</color>
+    <color name="colorPrimaryDark">#5a9216</color>
+    <color name="colorAccent">#E64A19</color>
+    <color name="black_overlay">#66000000</color>
+
+    #5D4037
+    26C6DA
+    <!-- App Load Page-->
+    <color name="Color_Heading">#4E342E</color>
+    <color name="Color_ButtonText">#FFEB3B</color>
+    <color name="Color_Background">#F4FFF3</color>
+    <color name="Color_buttonBackPush">#7E57C2</color>
+    <color name="Color_buttonBackPusha">#5C6BC0</color>
+    <color name="Color_buttonBackPush1">#42A5F5</color>
+    <color name="Color_buttonBackPush1a">#29B6F6</color>
+    <color name="Color_buttonBackPush2">#26C6DA</color>
+    <color name="Color_buttonBackPush2a">#26A69A</color>
+    <color name="Color_buttonBackPush3">#8D6E63</color>
+</resources>

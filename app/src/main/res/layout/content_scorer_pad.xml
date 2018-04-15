@@ -1,0 +1,473 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/Color_Background"
+    android:orientation="vertical"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    android:theme="@style/AppTheme"
+    tools:context="com.example.android.cricketscoreboard.views.ScorerPadActivity"
+    tools:showIn="@layout/app_bar_scorer_pad">
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/rectangle"
+    android:orientation="vertical">
+
+    <RelativeLayout
+        android:id="@+id/score_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="0">
+
+        <TextView
+            android:id="@+id/Batting_score_text_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:text="Score: "
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/Batting_score_editText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@id/Batting_score_text_view"
+            android:layout_alignParentTop="true"
+            android:layout_toEndOf="@id/Batting_score_text_view"
+            android:layout_toRightOf="@id/Batting_score_text_view"
+            android:digits="3"
+            android:focusable="false"
+            android:inputType="number"
+            android:maxEms="3"
+            android:text="0"
+            android:textColor="@color/black_overlay"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/Slash"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/Batting_score_editText"
+            android:layout_toRightOf="@id/Batting_score_editText"
+            android:fontFamily="monospace"
+            android:text="/"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/Wickets_editText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@id/Slash"
+            android:layout_alignParentTop="true"
+            android:layout_toEndOf="@id/Slash"
+            android:layout_toRightOf="@id/Slash"
+            android:focusable="false"
+            android:inputType="number"
+            android:maxEms="2"
+            android:text="0"
+            android:textColor="@color/black_overlay"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/Bowling_overs_text_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_marginLeft="20dp"
+            android:layout_toEndOf="@id/Wickets_editText"
+            android:layout_toRightOf="@id/Wickets_editText"
+            android:fontFamily="monospace"
+            android:text="Overs: "
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/Bowling_overs_editText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@id/Bowling_overs_text_view"
+            android:layout_toEndOf="@id/Bowling_overs_text_view"
+            android:layout_toRightOf="@id/Bowling_overs_text_view"
+            android:focusable="false"
+            android:inputType="number"
+            android:maxEms="2"
+            android:text="0"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/Bowling_oversBall_text_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_toEndOf="@id/Bowling_overs_editText"
+            android:layout_toRightOf="@id/Bowling_overs_editText"
+            android:fontFamily="monospace"
+            android:text="."
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/Bowling_oversBall_editText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@id/Bowling_oversBall_text_view"
+            android:layout_alignParentTop="true"
+            android:layout_toEndOf="@id/Bowling_oversBall_text_view"
+            android:layout_toRightOf="@id/Bowling_oversBall_text_view"
+            android:focusable="false"
+            android:inputType="number"
+            android:maxEms="1"
+            android:text="0"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+
+        <TextView
+            android:id="@+id/bowlerName_text_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="40dp"
+            android:fontFamily="monospace"
+            android:text="Bowler's Name :"
+
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/bowlerName_spinner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="0dp"
+            android:layout_marginTop="40dp"
+
+            android:layout_toEndOf="@id/bowlerName_text_view"
+            android:layout_toRightOf="@id/bowlerName_text_view" />
+
+        <Button
+            android:id="@+id/StartOver_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@id/bowlerName_text_view"
+            android:layout_below="@id/Bowling_overs_text_view"
+
+            android:layout_toEndOf="@id/bowlerName_spinner"
+            android:layout_toRightOf="@id/bowlerName_spinner"
+
+            android:text="Go"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/thisOver_text_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+
+            android:layout_alignParentLeft="true"
+            android:layout_below="@id/bowlerName_text_view"
+
+            android:fontFamily="monospace"
+            android:text="This Over :"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/thisOverValue_text_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+
+            android:layout_below="@id/thisOver_text_view"
+            android:fontFamily="monospace"
+            android:text=""
+            android:textSize="16sp" />
+
+
+        <TextView
+            android:id="@+id/scoredRuns_textView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/thisOver_text_view"
+
+            android:layout_marginTop="20dp"
+            android:text="Runs Scored"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+
+        <RadioGroup
+            android:id="@+id/runsScored_radioGrp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/scoredRuns_textView"
+            android:orientation="horizontal"
+            android:background="@drawable/rectangle">
+
+            <RadioButton
+                android:id="@+id/radioBtn_ZeroRun"
+
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="0" />
+
+            <RadioButton
+                android:id="@+id/radioBtn_OneRun"
+
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1" />
+
+            <RadioButton
+                android:id="@+id/radioBtn_TwoRun"
+
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="2" />
+
+            <RadioButton
+                android:id="@+id/radioBtn_ThreeRun"
+
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="3" />
+
+            <RadioButton
+                android:id="@+id/radioBtn_FourRun"
+
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="4"
+
+                />
+
+            <RadioButton
+                android:id="@+id/radioBtn_FiveRun"
+
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="5" />
+
+            <RadioButton
+                android:id="@+id/radioBtn_SixRun"
+
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="6" />
+        </RadioGroup>
+
+
+        <RadioGroup
+            android:id="@+id/wideBall_NoBall_radioGrp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/runsScored_radioGrp"
+            android:layout_marginTop="5dp"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/radioBtn_WideBall"
+
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="monospace"
+                android:onClick="onWideBallCheck"
+                android:paddingLeft="2dp"
+                android:text="Wide Ball"
+                android:textSize="14sp" />
+
+            <RadioButton
+                android:id="@+id/radioBtn_NoBall"
+
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="monospace"
+                android:onClick="onNoBallCheck"
+                android:paddingLeft="2dp"
+                android:text="No Ball"
+                android:textSize="14sp" />
+
+        </RadioGroup>
+
+        <CheckBox
+            android:id="@+id/freeHit_checkBox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@id/wideBall_NoBall_radioGrp"
+            android:layout_toRightOf="@id/wideBall_NoBall_radioGrp"
+            android:enabled="false"
+            android:fontFamily="monospace"
+            android:paddingLeft="2dp"
+
+            android:text="Free Hit"
+            android:textSize="14sp" />
+
+
+        <RadioGroup
+            android:id="@+id/byes_radioGrp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/wideBall_NoBall_radioGrp"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/radioBtn_byes"
+
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="monospace"
+                android:paddingLeft="2dp"
+                android:text="Byes"
+                android:textSize="14sp" />
+
+            <RadioButton
+                android:id="@+id/radioBtn_LegByes"
+
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="monospace"
+                android:paddingLeft="2dp"
+                android:text="Leg Byes"
+                android:textSize="14sp" />
+
+        </RadioGroup>
+
+
+        <CheckBox
+            android:id="@+id/out_CheckBox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignEnd="@id/thisOver_text_view"
+            android:layout_alignRight="@id/thisOver_text_view"
+            android:layout_alignTop="@id/byes_radioGrp"
+            android:layout_marginTop="30dp"
+            android:fontFamily="monospace"
+            android:onClick="onOutCheckBoxChecked"
+            android:text="Out"
+            android:textColorLink="?attr/editTextColor"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/out_spinner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/byes_radioGrp"
+            android:layout_toEndOf="@id/out_CheckBox"
+            android:layout_toRightOf="@id/out_CheckBox" />
+
+        <CheckBox
+            android:id="@+id/undo_checkBox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@id/out_CheckBox"
+            android:layout_toEndOf="@id/wideBall_NoBall_radioGrp"
+            android:layout_toRightOf="@id/wideBall_NoBall_radioGrp"
+            android:fontFamily="monospace"
+            android:text="UNDO BALL"
+            android:textSize="14sp" />
+
+        <ImageButton
+            android:id="@+id/postBall_imageButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@id/undo_checkBox"
+            android:layout_below="@id/undo_checkBox"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="40dp"
+            android:adjustViewBounds="true"
+            android:background="?android:attr/selectableItemBackground"
+            android:cropToPadding="true"
+            android:drawingCacheQuality="low"
+            android:fadingEdge="horizontal|vertical"
+            android:foregroundTintMode="multiply"
+            android:maxWidth="90dp"
+            android:minHeight="0dp"
+            android:onClick="onBallPress"
+            android:scaleType="fitXY"
+            android:tintMode="add"
+            app:srcCompat="@drawable/as_1409_512" />
+    </RelativeLayout>
+
+    <LinearLayout
+
+        android:id="@+id/batsmen_Card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="0"
+        android:orientation="vertical">
+
+        <RadioGroup
+            android:id="@+id/Striker_NonStriker_radioGrp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@id/scoredRuns_textView"
+            android:layout_marginTop="5dp"
+            android:layout_toLeftOf="@id/StartOver_btn"
+            android:layout_toStartOf="@id/StartOver_btn"
+            android:orientation="vertical"
+            android:visibility="invisible">
+
+            <RadioButton
+                android:id="@+id/radioBtn_Striker"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Batsmen" />
+
+            <RadioButton
+                android:id="@+id/radioBtn_NonStriker"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Non Striker" />
+
+        </RadioGroup>
+
+
+        <TextView
+            android:id="@+id/strikerName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:text="Batsmen:"
+
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/strikerNameValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:text="äditya"
+
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/nonStrikerName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+
+            android:fontFamily="monospace"
+            android:text="Non Striker:"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/nonStrikerNameValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+
+            android:fontFamily="monospace"
+            android:text="aditya1sadasdbjahjdahjdahdjkhad"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+
+
+</LinearLayout>
+
+</ScrollView>
