@@ -34,6 +34,7 @@ import com.example.android.cricketscoreboard.entity.Users;
  */
 
 public class DatabaseHandler extends SQLiteOpenHelper {
+    public String USERID="aditya.juet@gmail.com";
     private static final int DATABASE_VERSION = 1;
     //Declaring Database Name
     private SQLiteDatabase db;
@@ -392,7 +393,12 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
     public String getTeamName(int teamId) {
         String teamName = "";
+        String selectQuery = "SELECT " + COLUMN_TEAM_NAME + " FROM " + TABLE_TEAM_DETAILS + " WHERE " + COLUMN_TEAM_ID + "=" +teamId;
+        SQLiteDatabase db=this.getReadableDatabase();
 
+        Cursor cursor=db.rawQuery(selectQuery,null);
+        cursor.moveToFirst();
+       teamName=cursor.getString(cursor.getColumnIndex(COLUMN_TEAM_NAME));
         return teamName;
     }
 
@@ -655,59 +661,60 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         String[] WHEREARGS = new String[]{String.valueOf(playerId)};
         try {
             SQLiteDatabase db = this.getReadableDatabase();
-            Log.v("getPlayerDetails", "player Id Value" + playerId);
+            Log.v("getPlayerDetails", "player Id Value: " + playerId);
 
             // Cursor cursor = db.rawQuery(selectQuery,String.valueOf(teamId));//WHERE,new String[]{String.valueOf(teamId)});;//selectQuery,selectedArguments
 
             Cursor cursor = db.query(TABLE_PLAYER_DETAILS, columns, WHERE, WHEREARGS, null, null, null, null);
             cursor.moveToFirst();
+            //cursor.moveToLast();
 
             player.playerName=cursor.getString(cursor.getColumnIndex(COLUMN_PLAYER_NAME));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_NAME Value" + cursor.getString(cursor.getColumnIndex(COLUMN_PLAYER_NAME)));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_NAME Value: " + cursor.getString(cursor.getColumnIndex(COLUMN_PLAYER_NAME)));
             player.playerID=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_ID));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_ID Value" + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_ID)));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_ID Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_ID)));
             player.playerEmail=cursor.getString(cursor.getColumnIndex(COLUMN_PLAYER_EMAIL));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_EMAIL Value" + cursor.getString(cursor.getColumnIndex(COLUMN_PLAYER_EMAIL)));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_EMAIL Value: " + cursor.getString(cursor.getColumnIndex(COLUMN_PLAYER_EMAIL)));
             player.playerBatsmen=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_BATSMAN));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_BATSMAN Value" + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_BATSMAN)));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_BATSMAN Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_BATSMAN)));
             player.playerBowler=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_BOWLER));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_BOWLER Value" + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_BOWLER)));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_BOWLER Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_BOWLER)));
             player.playerWK=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_WICKETKEEPER));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_WICKETKEEPER Value" + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_WICKETKEEPER)));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_WICKETKEEPER Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_WICKETKEEPER)));
           //  player.playerImage=cursor.getBlob(cursor.getColumnIndex(COLUMN_PLAYER_IMAGE));
             player.playerDOB=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_DOB));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_DOB Value" + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_DOB)));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_DOB Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_DOB)));
             player.playerTeamId=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_TEAM_ID));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_TEAM_ID Value" +cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_TEAM_ID)));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_TEAM_ID Value: " +cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_TEAM_ID)));
             player.playerTotalRuns=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_TOTAL_RUNS));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_TOTAL_RUNS Value" + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_TOTAL_RUNS)));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_TOTAL_RUNS Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_TOTAL_RUNS)));
             player.playerFifty=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_FIFTY));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_FIFTY Value" + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_FIFTY)));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_FIFTY Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_FIFTY)));
             player.playerHundred=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_HUNDRED));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_HUNDRED Value" + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_HUNDRED)));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_HUNDRED Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_HUNDRED)));
             player.playerBallFaced=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_BALLS_FACED));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_BALLS_FACED Value" + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_BALLS_FACED)));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_BALLS_FACED Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_BALLS_FACED)));
             player.playerTwoHundred=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_TWO_HUNDRED));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_TWO_HUNDRED Value" + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_TWO_HUNDRED)));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_TWO_HUNDRED Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_TWO_HUNDRED)));
             player.playerMatchPlayed=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_MATCH_PLAYED));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_MATCH_PLAYED Value" + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_MATCH_PLAYED)));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_MATCH_PLAYED Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_MATCH_PLAYED)));
             player.playerOverBowled=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_OVERS_BOWLED));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_OVERS_BOWLED Value" + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_OVERS_BOWLED)));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_OVERS_BOWLED Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_OVERS_BOWLED)));
             player.playerWicketTaken=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_WICKETS_TAKEN));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_WICKETS_TAKEN Value" + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_WICKETS_TAKEN)));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_WICKETS_TAKEN Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_WICKETS_TAKEN)));
             player.playerMaidenBowled=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_MAIDEN_BOWLED));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_MAIDEN_BOWLED Value" + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_MAIDEN_BOWLED)));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_MAIDEN_BOWLED Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_MAIDEN_BOWLED)));
             player.playerWidesCount=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_WIDES_COUNT));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_WIDES_COUNT Value" + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_WIDES_COUNT)));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_WIDES_COUNT Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_WIDES_COUNT)));
             player.playerNoBallCount=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_NOBALL_COUNT));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_NOBALL_COUNT Value" + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_NOBALL_COUNT)));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_NOBALL_COUNT Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_NOBALL_COUNT)));
             player.playerRunsGiven=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_RUNS_GIVEN));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_RUNS_GIVEN Value" + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_RUNS_GIVEN)));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_RUNS_GIVEN Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_RUNS_GIVEN)));
             player.playerCatches=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYERS_CATCHES));
-            Log.v("getPlayerDetails", "COLUMN_PLAYERS_CATCHES Value" + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYERS_CATCHES)));
+            Log.v("getPlayerDetails", "COLUMN_PLAYERS_CATCHES Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYERS_CATCHES)));
 
 
-            Log.v("getPlayerDetails", "Retrieved Player details for Player id:" + playerId);
+            Log.v("getPlayerDetails", "Retrieved Player details for Player id: " + playerId);
             cursor.close();
             db.close();
             // returning Player details with PlayerId
@@ -842,6 +849,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         try {
             SQLiteDatabase db = this.getReadableDatabase();
             Cursor cursor = db.rawQuery(selectQuery, null);//selectQuery,selectedArguments
+
             if (cursor.moveToLast()) {  //cursor!=null&&
                 do {
 
@@ -878,15 +886,89 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     }
 
     //Used to add schedule details in DB
-    public void addSchedule(int matchDate, int TeamAId, int TeamBId, int matchOvers) {
+    public void addSchedule(String userId,String matchDate, int TeamAId, int TeamBId, int matchOvers) {
+        try {
+            SQLiteDatabase db = this.getWritableDatabase();
+            ContentValues scheduleValues = new ContentValues();
+
+            //Key Values- Auto Generated
+            scheduleValues.putNull(COLUMN_SCHEDULE_MATCH_ID);
+
+            //Basic Schedule Details
+            scheduleValues.put(COLUMN_SCHEDULE_USER_ID, userId);
+            scheduleValues.put(COLUMN_SCHEDULE_MATCH_DATE, matchDate);
+            scheduleValues.put(COLUMN_SCHEDULE_TEAMA_ID, TeamAId);
+            scheduleValues.put(COLUMN_SCHEDULE_TEAMB_ID, TeamBId);
+            scheduleValues.put(COLUMN_SCHEDULE_MATCH_TYPE, matchOvers);
+
+            //Null Values
+            scheduleValues.putNull(COLUMN_SCHEDULE_GROUND_ID);
+            scheduleValues.putNull(COLUMN_SCHEDULE_TEAMA_SCORE);
+            scheduleValues.putNull(COLUMN_SCHEDULE_TEAMB_SCORE);
+            scheduleValues.putNull(COLUMN_SCHEDULE_TEAMA_WICKETS);
+            scheduleValues.putNull(COLUMN_SCHEDULE_TEAMB_WICKETS);
+            scheduleValues.putNull(COLUMN_SCHEDULE_TEAMA_OVERS);
+            scheduleValues.putNull(COLUMN_SCHEDULE_TEAMB_OVERS);
+            scheduleValues.putNull(COLUMN_SCHEDULE_TOSS_WON_TEAM);
+            scheduleValues.putNull(COLUMN_SCHEDULE_TOSS_DECISION);
+            scheduleValues.putNull(COLUMN_SCHEDULE_WINNING_TEAM_ID);
+            scheduleValues.put(COLUMN_SCHEDULE_MATCH_STATUS,"SCHEDULED");
+            scheduleValues.putNull(COLUMN_SCHEDULE_MATCH_OVERS);
+
+
+            // Inserting Row
+            db.insert(TABLE_SCHEDULE_DETAILS, null, scheduleValues);//tableName, nullColumnHack, CotentValues
+
+            db.close(); // Closing database connection
+        }catch (Exception e){
+            Log.v("addSchedule","Ërror in adding basic schedule details");
+        }
 
     }
 
     //Used to view all schedules
-    public ArrayList<String> viewAllSchedules() {
-        ArrayList<String> list = new ArrayList<>();
+    public String[][] viewAllSchedules() {
+        String selectQuery = "SELECT " + COLUMN_SCHEDULE_MATCH_DATE+ ", " +COLUMN_SCHEDULE_TEAMA_ID+ ", " +COLUMN_SCHEDULE_TEAMB_ID+ ", " +COLUMN_SCHEDULE_MATCH_TYPE+" FROM " +TABLE_SCHEDULE_DETAILS;
 
+        SQLiteDatabase db=this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(selectQuery, null);//selectQuery,selectedArguments
+        int numberOfRows=cursor.getCount();
+        int numberOfColumns=cursor.getColumnCount();
+        String[][] list = new String[numberOfRows][numberOfColumns];
+        try {
+            cursor.moveToFirst();
+
+            for (int i = 0; i < numberOfRows; i++) {
+                if(i!=0){
+                    cursor.moveToNext();
+                }
+
+                    for (int j = 0; j < numberOfColumns; j++) {
+
+                   /* list.add(cursor.getInt(cursor.getColumnIndex(COLUMN_TEAM_ID))+"\t\t\t"+*///list.add(cursor.getString(cursor.getColumnIndex(COLUMN_PLAYER_ID)));
+                        list[i][j] = cursor.getString(j);//adding 2nd column data
+
+                    }
+
+            }
+        }catch (Exception e){
+            Log.v("DatabaseHandler:","Exception thrown at viewAllSchedules  "+e);
+            Log.v("DatabaseHandler:","Number of Rows "+numberOfRows);
+            Log.v("DatabaseHandler:","Number of Columns "+numberOfColumns);
+        }
         return list;
+    }
+    public int getNumberOfSchedules(){
+        int numberOfRows =0;
+       try {
+           String selectQuery = "SELECT " + COLUMN_SCHEDULE_MATCH_DATE + ", " + COLUMN_SCHEDULE_TEAMA_ID + ", " + COLUMN_SCHEDULE_TEAMB_ID + ", " + COLUMN_SCHEDULE_MATCH_TYPE + " FROM " + TABLE_SCHEDULE_DETAILS;
+           SQLiteDatabase db = this.getReadableDatabase();
+           Cursor cursor = db.rawQuery(selectQuery, null);//selectQuery,selectedArguments
+           numberOfRows = cursor.getCount();
+       }catch (Exception e){
+           Log.v("DatabaseHandler:","Error in function getNumberOfSchedules"+e);
+       }
+        return numberOfRows;
     }
 
     //used to update schedules

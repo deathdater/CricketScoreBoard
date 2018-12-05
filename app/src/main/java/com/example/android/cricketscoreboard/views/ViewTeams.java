@@ -22,14 +22,19 @@ import java.util.List;
 
 public class ViewTeams extends AppCompatActivity {
     Bundle customsavedIntanceState;
-  //Spinner teamList;
+    List valTeam=new ArrayList();
+    List valAddPlayer=new ArrayList();
+    List valRemovePlayer=new ArrayList();
+    Spinner teamList;
+    Spinner addPlayer_spinner;
+    Spinner removePlayer_spinner;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_view_teams);
-         Spinner teamList=(Spinner)findViewById(R.id.teamNameSpinner) ;
-        Spinner addPlayer_spinner=(Spinner)findViewById(R.id.addPlayer_spinner);
-        Spinner removePlayer_spinner=(Spinner)findViewById(R.id.removePlayer_spinner);
+        teamList=(Spinner)findViewById(R.id.teamNameSpinner) ;
+        addPlayer_spinner=(Spinner)findViewById(R.id.addPlayer_spinner);
+        removePlayer_spinner=(Spinner)findViewById(R.id.removePlayer_spinner);
        // final ListView listview = (ListView) findViewById(R.id.teams_list);
 
         //String[] values = new String[] { "Android", "iPhone", "WindowsMobile",
@@ -39,12 +44,13 @@ public class ViewTeams extends AppCompatActivity {
             //    "Android", "iPhone", "WindowsMobile" };
         try{
         DatabaseHandler db=new DatabaseHandler(this);
+        /*
         List valTeam=new ArrayList();
         List valAddPlayer=new ArrayList();
         List valRemovePlayer=new ArrayList();
+        */
 
-
-            Log.v("View Teams","Check 1");
+            Log.v("View Teams","Checking if the teams exist in DB");
 
 //Preparing list of team Names
         if(db.getAllTeamNames().size()>0) {
@@ -120,11 +126,6 @@ public class ViewTeams extends AppCompatActivity {
 
                 Log.v("TeamData:", " Loaded from DB");
                 Toast.makeText(ViewTeams.this,"Data Loaded from DB",Toast.LENGTH_SHORT).show();
-
-
-
-
-
 
 //              newSelection();
                //TextView playerNameText= (TextView)findViewById(R.id.playerNameText);
@@ -238,11 +239,13 @@ public void addPlayerButtonClick(View view) {
     Spinner addPlayer=(Spinner)findViewById(R.id.addPlayer_spinner);
     if(addPlayer.getSelectedItemPosition()!=-1) {
 
-        String addPlayerStr = addPlayer.getItemAtPosition(0).toString();
+        String addPlayerStr = addPlayer.getItemAtPosition(addPlayer.getSelectedItemPosition()).toString();
 
-        Spinner teamAdd = (Spinner) findViewById(R.id.teamNameSpinner);
-        String teamAddstr = teamAdd.getItemAtPosition(0).toString();
-        int teamPosition = teamAdd.getSelectedItemPosition();
+        //Spinner teamAdd = (Spinner) findViewById(R.id.teamNameSpinner);
+       // String teamAddstr = teamAdd.getItemAtPosition(teamAdd.getSelectedItemPosition()).toString();
+       // int teamPosition = teamAdd.getSelectedItemPosition();
+        String teamAddstr= this.teamList.getSelectedItem().toString();
+        int teamPosition=teamList.getSelectedItemPosition();
 
         Log.v("Checking Team String", "" + teamAddstr);
         Log.v("Checking Player String", "" + addPlayerStr);
@@ -254,7 +257,7 @@ public void addPlayerButtonClick(View view) {
             finish();
             startActivity(getIntent());
 
-            teamAdd.setVerticalScrollbarPosition(teamPosition);
+            teamList.setVerticalScrollbarPosition(teamPosition);
 
         } catch (Exception e) {
             Log.v("addPlayerButtonClick", "Threw Exception " + e);
@@ -269,7 +272,7 @@ public void addPlayerButtonClick(View view) {
     public void removePlayerButtonClick(View view) {
         Spinner removePlayer=(Spinner)findViewById(R.id.removePlayer_spinner);
       if(removePlayer.getSelectedItemPosition()!=-1) {
-          String removePlayerStr = removePlayer.getItemAtPosition(0).toString();
+          String removePlayerStr = removePlayer.getItemAtPosition(removePlayer.getSelectedItemPosition()).toString();
 
           // Spinner teamAdd=(Spinner)findViewById(R.id.teamNameSpinner);
           //String teamAddstr=teamAdd.getItemAtPosition(0).toString();

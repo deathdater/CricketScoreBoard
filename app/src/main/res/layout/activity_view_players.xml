@@ -92,7 +92,7 @@
             android:layout_below="@id/playerDOBText"
             android:layout_toRightOf="@id/player_logo"
             android:editable="true"
-            android:hint="Team Name"
+            android:hint="Team Not Assigned"
             android:padding="5dp"
             android:textSize="15sp"
             android:textStyle="bold" />
@@ -104,8 +104,6 @@
             android:layout_below="@id/playerDOBText"
             android:layout_toRightOf="@id/teamNameText"
             android:layout_alignParentRight="true"
-
-
             >
 
         </Spinner>

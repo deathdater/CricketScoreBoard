@@ -112,7 +112,7 @@ public class ViewPlayers extends AppCompatActivity {
             {
 
                 val.add(db.viewAllPlayers().get(i));
-                Log.i("Value of element " + i, val.get(i));
+                Log.v("Value of Player element " + i, val.get(i));
             }
 
 
@@ -162,14 +162,18 @@ public class ViewPlayers extends AppCompatActivity {
                 DatabaseHandler db=new DatabaseHandler(ViewPlayers.this);
 
                     int playerId=(db.getPlayerId(parent.getSelectedItem().toString()));
-                    Log.v("Player Id","Requested"+playerId);
+                    Log.v("Player Id","Requested: "+playerId);
                     Players player=db.getPlayerDetails(playerId);
-                    Log.v("PlayerData:", " Player.playerName"+player.playerName);
+                    Log.v("PlayerData:", " Player.playerName: "+player.playerName);
 
                     playerNameText.setText(""+player.playerName);
                     playerDOBText.setText(""+player.playerDOB);
                     playerEmailText.setText(""+player.playerEmail);
-                    teamNameText.setText(""+db.getTeamName(player.playerTeamId));
+                    if(player.playerTeamId!=0){
+                        teamNameText.setText(""+db.getTeamName(player.playerTeamId));
+                    }else{
+                        teamNameText.setText("");
+                    }
                     playerMatchPlayedValue.setText(""+player.playerMatchPlayed);
                     playerWicketsValue.setText(""+player.playerWicketTaken);
                     playerBallsFacedValue.setText(""+player.playerBallFaced);

@@ -224,6 +224,7 @@ public class LandingPageActivity extends AppCompatActivity {
 
 
                             Toast.makeText(LandingPageActivity.this, "View/Edit Match Schedule", Toast.LENGTH_SHORT).show();
+                            viewScheduleMatches(v);
                             return true;
                         }
 
@@ -295,6 +296,14 @@ public class LandingPageActivity extends AppCompatActivity {
 
 
         Intent intent = new Intent(LandingPageActivity.this,ScheduleMatches.class);
+        startActivity(intent);
+
+
+    }
+    public void viewScheduleMatches(View view){
+
+
+        Intent intent = new Intent(LandingPageActivity.this,ViewSchedules.class);
         startActivity(intent);
 
 
