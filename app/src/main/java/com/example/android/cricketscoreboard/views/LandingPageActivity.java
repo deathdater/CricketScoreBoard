@@ -18,6 +18,8 @@ import android.widget.Toast;
 import com.example.android.cricketscoreboard.DatabaseHandler;
 import com.example.android.cricketscoreboard.R;
 import com.example.android.cricketscoreboard.UiSettingsDialog;
+import com.example.android.cricketscoreboard.sync.CloudSyncDialog;
+import com.example.android.cricketscoreboard.sync.SyncPreferences;
 
 import java.util.List;
 import java.util.Locale;
@@ -61,6 +63,12 @@ public class LandingPageActivity extends AppCompatActivity {
             setRulesBtn.setOnClickListener(v -> UiSettingsDialog.show(LandingPageActivity.this));
         }
 
+        View summaryCard = findViewById(R.id.dashboard_summary_card);
+        if (summaryCard != null) {
+            summaryCard.setOnClickListener(v ->
+                    CloudSyncDialog.show(LandingPageActivity.this, this::refreshClubSummaryBanner));
+        }
+
         refreshClubSummaryBanner();
     }
 
@@ -82,9 +90,13 @@ public class LandingPageActivity extends AppCompatActivity {
             int schedules = db.getNumberOfSchedules();
             int teamCount = teams != null ? teams.size() : 0;
             int playerCount = players != null ? players.size() : 0;
+            SyncPreferences syncPrefs = SyncPreferences.get(this);
+            String syncBadge = syncPrefs.isSyncEnabled()
+                    ? "  •  Sync: " + syncPrefs.getClubId()
+                    : "";
             subtitle.setText(String.format(Locale.US,
-                    "%d Teams  •  %d Players  •  %d Scheduled Matches",
-                    teamCount, playerCount, schedules));
+                    "%d Teams  •  %d Players  •  %d Scheduled Matches%s",
+                    teamCount, playerCount, schedules, syncBadge));
         } catch (Exception e) {
             Log.v("LandingPageActivity", "Summary banner refresh failed: " + e);
         }

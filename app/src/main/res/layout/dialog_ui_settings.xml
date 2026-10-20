@@ -138,5 +138,13 @@
             android:minHeight="48dp"
             android:text="Skip welcome screen on startup" />
 
+        <Button
+            android:id="@+id/btn_open_cloud_sync"
+            style="@style/Widget.Cricket.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Cloud Synchronization..." />
+
     </LinearLayout>
 </ScrollView>

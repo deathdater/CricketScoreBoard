@@ -26,6 +26,17 @@ import com.example.android.cricketscoreboard.entity.Rules;
 import com.example.android.cricketscoreboard.entity.Schedules;
 import com.example.android.cricketscoreboard.entity.Teams;
 import com.example.android.cricketscoreboard.entity.Users;
+import com.example.android.cricketscoreboard.sync.CricketSyncWorker;
+import com.example.android.cricketscoreboard.sync.SyncPreferences;
+import com.example.android.cricketscoreboard.sync.SyncRecordModels;
+import com.example.android.cricketscoreboard.sync.SyncRecordModels.OutboxItem;
+import com.example.android.cricketscoreboard.sync.SyncRecordModels.PlayerSyncRecord;
+import com.example.android.cricketscoreboard.sync.SyncRecordModels.ScheduleSyncRecord;
+import com.example.android.cricketscoreboard.sync.SyncRecordModels.TeamSyncRecord;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 
 /**
@@ -35,12 +46,44 @@ import com.example.android.cricketscoreboard.entity.Users;
 public class DatabaseHandler extends SQLiteOpenHelper {
     public String USERID="aditya.juet@gmail.com";
     // v2: fixed MATCH_DETAILS schema (missing USER_EMAIL_ID column type).
-    private static final int DATABASE_VERSION = 2;
+    // v3: added offline-first cloud sync metadata columns + SYNC_OUTBOX table.
+    private static final int DATABASE_VERSION = 3;
     //Declaring Database Name
     private SQLiteDatabase db;
+    private final Context appContext;
     private static final String DATABASE_NAME = "cricketScore_DB";
     Teams team = new Teams();
     Players player=new Players();
+
+    // Common Sync Metadata Columns added in v3
+    public static final String COLUMN_SYNC_UUID = "SYNC_UUID";
+    public static final String COLUMN_CLUB_ID = "CLUB_ID";
+    public static final String COLUMN_UPDATED_AT = "UPDATED_AT";
+    public static final String COLUMN_IS_DELETED = "IS_DELETED";
+    public static final String COLUMN_SYNC_STATUS = "SYNC_STATUS";
+    public static final String COLUMN_REMOTE_VERSION = "REMOTE_VERSION";
+
+    // Persistent Sync Outbox Table
+    public static final String TABLE_SYNC_OUTBOX = "SYNC_OUTBOX";
+    public static final String COLUMN_OUTBOX_ID = "OUTBOX_ID";
+    public static final String COLUMN_OUTBOX_ENTITY_TYPE = "ENTITY_TYPE";
+    public static final String COLUMN_OUTBOX_ENTITY_UUID = "ENTITY_UUID";
+    public static final String COLUMN_OUTBOX_OPERATION = "OPERATION";
+    public static final String COLUMN_OUTBOX_PAYLOAD = "PAYLOAD_JSON";
+    public static final String COLUMN_OUTBOX_CREATED_AT = "CREATED_AT";
+    public static final String COLUMN_OUTBOX_RETRY_COUNT = "RETRY_COUNT";
+    public static final String COLUMN_OUTBOX_LAST_ERROR = "LAST_ERROR";
+
+    public static final String CREATE_TABLE_SYNC_OUTBOX = "CREATE TABLE IF NOT EXISTS " + TABLE_SYNC_OUTBOX + "("
+            + COLUMN_OUTBOX_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+            + COLUMN_OUTBOX_ENTITY_TYPE + " TEXT NOT NULL,"
+            + COLUMN_OUTBOX_ENTITY_UUID + " TEXT NOT NULL,"
+            + COLUMN_OUTBOX_OPERATION + " TEXT NOT NULL,"
+            + COLUMN_OUTBOX_PAYLOAD + " TEXT NOT NULL,"
+            + COLUMN_OUTBOX_CREATED_AT + " INTEGER NOT NULL,"
+            + COLUMN_OUTBOX_RETRY_COUNT + " INTEGER DEFAULT 0,"
+            + COLUMN_OUTBOX_LAST_ERROR + " TEXT,"
+            + " UNIQUE(" + COLUMN_OUTBOX_ENTITY_TYPE + ", " + COLUMN_OUTBOX_ENTITY_UUID + "));";
 
     //Declaring all Tables
 
@@ -281,7 +324,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
     public DatabaseHandler(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
-
+        this.appContext = context != null ? context.getApplicationContext() : null;
     }
 
     // Creating Tables
@@ -295,11 +338,13 @@ public class DatabaseHandler extends SQLiteOpenHelper {
                 CREATE_TABLE_PLAYER_DETAILS,
                 CREATE_TABLE_MATCH_DETAILS,
                 CREATE_TABLE_RULES_DETAILS,
-                CREATE_TABLE_GROUND_DETAILS};
+                CREATE_TABLE_GROUND_DETAILS,
+                CREATE_TABLE_SYNC_OUTBOX};
 
         for (String sql : createStatements) {
             db.execSQL(sql);
         }
+        ensureSyncSchemaAndBackfill(db);
         //   db.execSQL(CREATE_TABLE_USER_DETAILS);
         //  db.execSQL(CREATE_TABLE_TEAM_DETAILS);
         // db.execSQL(CREATE_TABLE_SCHEDULE_DETAILS);
@@ -322,12 +367,113 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         onCreate(db);
     }
 
+    @Override
+    public void onOpen(SQLiteDatabase db) {
+        super.onOpen(db);
+        if (!db.isReadOnly()) {
+            ensureSyncSchemaAndBackfill(db);
+        }
+    }
+
+    private String getActiveClubId() {
+        if (appContext != null) {
+            return SyncPreferences.get(appContext).getClubId();
+        }
+        return SyncPreferences.DEFAULT_LOCAL_CLUB_ID;
+    }
+
+    /**
+     * Ensures sync metadata columns exist on synchronizable tables and backfills
+     * missing {@code SYNC_UUID} values on pre-existing local records without losing data.
+     */
+    private void ensureSyncSchemaAndBackfill(SQLiteDatabase db) {
+        db.execSQL(CREATE_TABLE_SYNC_OUTBOX);
+        ensureTableSyncColumns(db, TABLE_TEAM_DETAILS, COLUMN_TEAM_ID);
+        ensureTableSyncColumns(db, TABLE_PLAYER_DETAILS, COLUMN_PLAYER_ID);
+        ensureTableSyncColumns(db, TABLE_SCHEDULE_DETAILS, COLUMN_SCHEDULE_MATCH_ID);
+        ensureTableSyncColumns(db, TABLE_GROUND_DETAILS, COLUMN_GROUND_ID);
+    }
+
+    private void ensureTableSyncColumns(SQLiteDatabase db, String tableName, String pkColumn) {
+        Set<String> existingCols = new HashSet<>();
+        try (Cursor c = db.rawQuery("PRAGMA table_info(" + tableName + ")", null)) {
+            int nameIdx = c.getColumnIndex("name");
+            while (c.moveToNext() && nameIdx >= 0) {
+                existingCols.add(c.getString(nameIdx));
+            }
+        }
+        if (!existingCols.contains(COLUMN_SYNC_UUID)) {
+            db.execSQL("ALTER TABLE " + tableName + " ADD COLUMN " + COLUMN_SYNC_UUID + " TEXT");
+        }
+        if (!existingCols.contains(COLUMN_CLUB_ID)) {
+            db.execSQL("ALTER TABLE " + tableName + " ADD COLUMN " + COLUMN_CLUB_ID
+                    + " TEXT DEFAULT '" + SyncPreferences.DEFAULT_LOCAL_CLUB_ID + "'");
+        }
+        if (!existingCols.contains(COLUMN_UPDATED_AT)) {
+            db.execSQL("ALTER TABLE " + tableName + " ADD COLUMN " + COLUMN_UPDATED_AT + " INTEGER DEFAULT 0");
+        }
+        if (!existingCols.contains(COLUMN_IS_DELETED)) {
+            db.execSQL("ALTER TABLE " + tableName + " ADD COLUMN " + COLUMN_IS_DELETED + " INTEGER DEFAULT 0");
+        }
+        if (!existingCols.contains(COLUMN_SYNC_STATUS)) {
+            db.execSQL("ALTER TABLE " + tableName + " ADD COLUMN " + COLUMN_SYNC_STATUS
+                    + " TEXT DEFAULT '" + SyncRecordModels.STATUS_DIRTY + "'");
+        }
+        if (!existingCols.contains(COLUMN_REMOTE_VERSION)) {
+            db.execSQL("ALTER TABLE " + tableName + " ADD COLUMN " + COLUMN_REMOTE_VERSION + " INTEGER DEFAULT 0");
+        }
+
+        // Backfill SYNC_UUID and UPDATED_AT on any legacy pre-existing rows
+        long now = System.currentTimeMillis();
+        String clubId = getActiveClubId();
+        try (Cursor c = db.rawQuery("SELECT " + pkColumn + ", " + COLUMN_SYNC_UUID + ", " + COLUMN_UPDATED_AT
+                + " FROM " + tableName, null)) {
+            while (c.moveToNext()) {
+                int id = c.getInt(0);
+                String uuid = c.isNull(1) ? "" : c.getString(1);
+                long updatedAt = c.isNull(2) ? 0L : c.getLong(2);
+                if (uuid == null || uuid.trim().isEmpty()) {
+                    ContentValues cv = new ContentValues();
+                    cv.put(COLUMN_SYNC_UUID, UUID.randomUUID().toString());
+                    cv.put(COLUMN_CLUB_ID, clubId);
+                    cv.put(COLUMN_UPDATED_AT, updatedAt > 0 ? updatedAt : now);
+                    cv.put(COLUMN_IS_DELETED, 0);
+                    cv.put(COLUMN_SYNC_STATUS, SyncRecordModels.STATUS_DIRTY);
+                    db.update(tableName, cv, pkColumn + " = ?", new String[]{String.valueOf(id)});
+                }
+            }
+        }
+    }
+
+    private void enqueueOutboxInternal(SQLiteDatabase db, String entityType, String entityUuid,
+                                       String operation, String payloadJson) {
+        if (entityUuid == null || entityUuid.isEmpty() || payloadJson == null) {
+            return;
+        }
+        ContentValues cv = new ContentValues();
+        cv.put(COLUMN_OUTBOX_ENTITY_TYPE, entityType);
+        cv.put(COLUMN_OUTBOX_ENTITY_UUID, entityUuid);
+        cv.put(COLUMN_OUTBOX_OPERATION, operation);
+        cv.put(COLUMN_OUTBOX_PAYLOAD, payloadJson);
+        cv.put(COLUMN_OUTBOX_CREATED_AT, System.currentTimeMillis());
+        cv.put(COLUMN_OUTBOX_RETRY_COUNT, 0);
+        cv.putNull(COLUMN_OUTBOX_LAST_ERROR);
+        db.insertWithOnConflict(TABLE_SYNC_OUTBOX, null, cv, SQLiteDatabase.CONFLICT_REPLACE);
+        try {
+            CricketSyncWorker.enqueueIfEnabled(appContext);
+        } catch (Throwable ignored) {
+        }
+    }
+
     /**
      * Inserting new label into lables table
      */
     public void insertTeamBasicDetails(String teamName)//,byte[] imageBytes){//add code to insert image if selected.,int numberOfPlayers
     {
         //column name, column value
+        String syncUuid = UUID.randomUUID().toString();
+        String clubId = getActiveClubId();
+        long now = System.currentTimeMillis();
 
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues teamValues = new ContentValues();
@@ -340,6 +486,12 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         teamValues.put(COLUMN_TEAM_MATCHES_WON, 0);
         teamValues.put(COLUMN_TEAM_MATCHES_LOST, 0);
         teamValues.put(COLUMN_TEAM_LOGO, "NotSet");
+        teamValues.put(COLUMN_SYNC_UUID, syncUuid);
+        teamValues.put(COLUMN_CLUB_ID, clubId);
+        teamValues.put(COLUMN_UPDATED_AT, now);
+        teamValues.put(COLUMN_IS_DELETED, 0);
+        teamValues.put(COLUMN_SYNC_STATUS, SyncRecordModels.STATUS_DIRTY);
+        teamValues.put(COLUMN_REMOTE_VERSION, 0);
          /*   if(imageBytes!=null) {
                 teamValues.put(COLUMN_TEAM_LOGO, imageBytes);
             }
@@ -348,7 +500,27 @@ public class DatabaseHandler extends SQLiteOpenHelper {
             }
             */
         // Inserting Row
-        db.insert(TABLE_TEAM_DETAILS, null, teamValues);//tableName, nullColumnHack, CotentValues
+        long rowId = db.insert(TABLE_TEAM_DETAILS, null, teamValues);//tableName, nullColumnHack, CotentValues
+        if (rowId != -1) {
+            try {
+                TeamSyncRecord rec = new TeamSyncRecord();
+                rec.syncUuid = syncUuid;
+                rec.clubId = clubId;
+                rec.userEmailId = "aditya.juet@gmail.com";
+                rec.teamName = teamName;
+                rec.matchWon = 0;
+                rec.matchLost = 0;
+                rec.matchDraw = 0;
+                rec.captainId = 0;
+                rec.updatedAt = now;
+                rec.isDeleted = false;
+                rec.remoteVersion = 0L;
+                enqueueOutboxInternal(db, SyncRecordModels.ENTITY_TEAM, syncUuid,
+                        SyncRecordModels.OP_UPSERT, rec.toJson().toString());
+            } catch (Exception e) {
+                Log.w("DatabaseHandler", "Failed to enqueue team outbox record", e);
+            }
+        }
 
         db.close(); // Closing database connection
 
@@ -442,8 +614,9 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         ArrayList<String> teamlist = new ArrayList<>();
 
 
-        // Select All Query
-        String selectQuery = "SELECT " + COLUMN_TEAM_ID + ", " + COLUMN_TEAM_NAME + " FROM " + TABLE_TEAM_DETAILS;
+        // Select All Query (excluding soft-deleted tombstones)
+        String selectQuery = "SELECT " + COLUMN_TEAM_ID + ", " + COLUMN_TEAM_NAME + " FROM " + TABLE_TEAM_DETAILS
+                + " WHERE (" + COLUMN_IS_DELETED + " IS NULL OR " + COLUMN_IS_DELETED + " = 0)";
         //+ COLUMN_TEAM_ID + ','
 
         SQLiteDatabase db = this.getReadableDatabase();
@@ -477,6 +650,9 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     //Adding player details to DB
     //playerProfile parameter will tell batsmen,bowler,wicketkeeper
     public void addPlayerDetails(String userId, String playerName, int checkBatsman, int checkbowler, int checkWk) {   //args: File playerImage
+        String syncUuid = UUID.randomUUID().toString();
+        String clubId = getActiveClubId();
+        long now = System.currentTimeMillis();
 
         //code to add player
         SQLiteDatabase db = this.getWritableDatabase();
@@ -513,8 +689,38 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         playerValues.put(COLUMN_PLAYER_RUNS_GIVEN, 0);
         playerValues.put(COLUMN_PLAYERS_CATCHES, 0);
 
+        // Sync Metadata
+        playerValues.put(COLUMN_SYNC_UUID, syncUuid);
+        playerValues.put(COLUMN_CLUB_ID, clubId);
+        playerValues.put(COLUMN_UPDATED_AT, now);
+        playerValues.put(COLUMN_IS_DELETED, 0);
+        playerValues.put(COLUMN_SYNC_STATUS, SyncRecordModels.STATUS_DIRTY);
+        playerValues.put(COLUMN_REMOTE_VERSION, 0);
+
         // Inserting Row
-        db.insert(TABLE_PLAYER_DETAILS, null, playerValues);//tableName, nullColumnHack, CotentValues
+        long rowId = db.insert(TABLE_PLAYER_DETAILS, null, playerValues);//tableName, nullColumnHack, CotentValues
+        if (rowId != -1) {
+            try {
+                PlayerSyncRecord rec = new PlayerSyncRecord();
+                rec.syncUuid = syncUuid;
+                rec.clubId = clubId;
+                rec.userEmailId = userId;
+                rec.playerName = playerName;
+                rec.playerEmail = "NotSet";
+                rec.playerBatsman = checkBatsman;
+                rec.playerBowler = checkbowler;
+                rec.playerWicketKeeper = checkWk;
+                rec.playerDob = 0;
+                rec.teamSyncUuid = "";
+                rec.updatedAt = now;
+                rec.isDeleted = false;
+                rec.remoteVersion = 0L;
+                enqueueOutboxInternal(db, SyncRecordModels.ENTITY_PLAYER, syncUuid,
+                        SyncRecordModels.OP_UPSERT, rec.toJson().toString());
+            } catch (Exception e) {
+                Log.w("DatabaseHandler", "Failed to enqueue player outbox record", e);
+            }
+        }
 
         db.close(); // Closing database connection
 
@@ -770,8 +976,9 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         ArrayList<String> list = new ArrayList<>();
 
 
-        // Select All Query
-        String selectQuery = "SELECT " + COLUMN_PLAYER_ID + ", " + COLUMN_PLAYER_NAME + " FROM " + TABLE_PLAYER_DETAILS;
+        // Select All Query (excluding soft-deleted tombstones)
+        String selectQuery = "SELECT " + COLUMN_PLAYER_ID + ", " + COLUMN_PLAYER_NAME + " FROM " + TABLE_PLAYER_DETAILS
+                + " WHERE (" + COLUMN_IS_DELETED + " IS NULL OR " + COLUMN_IS_DELETED + " = 0)";
         //+ COLUMN_TEAM_ID + ','
 
         SQLiteDatabase db = this.getReadableDatabase();
@@ -804,13 +1011,17 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
     //Add Player to Team
     public void addPlayerInTeam(int playerId,int playerteamId){
+        long now = System.currentTimeMillis();
         ContentValues cv = new ContentValues();
         cv.put(COLUMN_PLAYER_TEAM_ID,""+playerteamId);
+        cv.put(COLUMN_UPDATED_AT, now);
+        cv.put(COLUMN_SYNC_STATUS, SyncRecordModels.STATUS_DIRTY);
         String WHERE=COLUMN_PLAYER_ID+"= ?";
        String[] WHEREARGS=new String[]{String.valueOf(playerId)};
         try{
-            SQLiteDatabase db = this.getReadableDatabase();
+            SQLiteDatabase db = this.getWritableDatabase();
             db.update(TABLE_PLAYER_DETAILS,cv,WHERE,WHEREARGS);
+            enqueuePlayerOutboxById(db, playerId);
             Log.v("addPlayerInTeam:","Player Updated with Team");
             db.close();
         }catch (Exception e){
@@ -823,13 +1034,17 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
     public void removePlayerInTeam(int playerId){
         int zero=0;
+        long now = System.currentTimeMillis();
         ContentValues cv = new ContentValues();
         cv.put(COLUMN_PLAYER_TEAM_ID,""+zero);
+        cv.put(COLUMN_UPDATED_AT, now);
+        cv.put(COLUMN_SYNC_STATUS, SyncRecordModels.STATUS_DIRTY);
         String WHERE=COLUMN_PLAYER_ID+"= ?";
         String[] WHEREARGS=new String[]{String.valueOf(playerId)};
         try{
-            SQLiteDatabase db = this.getReadableDatabase();
+            SQLiteDatabase db = this.getWritableDatabase();
             db.update(TABLE_PLAYER_DETAILS,cv,WHERE,WHEREARGS);
+            enqueuePlayerOutboxById(db, playerId);
             Log.v("removePlayerInTeam:","Player Updated with Team");
             db.close();
         }catch (Exception e){
@@ -843,7 +1058,9 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     public ArrayList<String> viewAllPlayers(int teamId) {
         ArrayList<String> list = new ArrayList<>();
         // Select All Query
-        String selectQuery = "SELECT " +COLUMN_PLAYER_ID+ ", " +COLUMN_PLAYER_NAME+ " FROM " +TABLE_PLAYER_DETAILS+ " WHERE "+COLUMN_PLAYER_TEAM_ID+"=\'"+teamId+"\'";
+        String selectQuery = "SELECT " +COLUMN_PLAYER_ID+ ", " +COLUMN_PLAYER_NAME+ " FROM " +TABLE_PLAYER_DETAILS
+                + " WHERE "+COLUMN_PLAYER_TEAM_ID+"=\'"+teamId+"\'"
+                + " AND (" + COLUMN_IS_DELETED + " IS NULL OR " + COLUMN_IS_DELETED + " = 0)";
 
         try {
             SQLiteDatabase db = this.getReadableDatabase();
@@ -856,6 +1073,8 @@ public class DatabaseHandler extends SQLiteOpenHelper {
                     list.add(cursor.getString(1));//adding 2nd column data
                 } while (cursor.moveToPrevious());
             }
+            cursor.close();
+            db.close();
         return list;
     }catch (Exception e){
 
@@ -887,6 +1106,12 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     //Used to add schedule details in DB
     public void addSchedule(String userId,String matchDate, int TeamAId, int TeamBId, int matchOvers) {
         try {
+            String syncUuid = UUID.randomUUID().toString();
+            String clubId = getActiveClubId();
+            long now = System.currentTimeMillis();
+            String teamAUuid = getTeamSyncUuid(TeamAId);
+            String teamBUuid = getTeamSyncUuid(TeamBId);
+
             SQLiteDatabase db = this.getWritableDatabase();
             ContentValues scheduleValues = new ContentValues();
 
@@ -914,9 +1139,33 @@ public class DatabaseHandler extends SQLiteOpenHelper {
             scheduleValues.put(COLUMN_SCHEDULE_MATCH_STATUS,"SCHEDULED");
             scheduleValues.putNull(COLUMN_SCHEDULE_MATCH_OVERS);
 
+            // Sync Metadata
+            scheduleValues.put(COLUMN_SYNC_UUID, syncUuid);
+            scheduleValues.put(COLUMN_CLUB_ID, clubId);
+            scheduleValues.put(COLUMN_UPDATED_AT, now);
+            scheduleValues.put(COLUMN_IS_DELETED, 0);
+            scheduleValues.put(COLUMN_SYNC_STATUS, SyncRecordModels.STATUS_DIRTY);
+            scheduleValues.put(COLUMN_REMOTE_VERSION, 0);
+
 
             // Inserting Row
-            db.insert(TABLE_SCHEDULE_DETAILS, null, scheduleValues);//tableName, nullColumnHack, CotentValues
+            long rowId = db.insert(TABLE_SCHEDULE_DETAILS, null, scheduleValues);//tableName, nullColumnHack, CotentValues
+            if (rowId != -1) {
+                ScheduleSyncRecord rec = new ScheduleSyncRecord();
+                rec.syncUuid = syncUuid;
+                rec.clubId = clubId;
+                rec.userEmailId = userId;
+                rec.matchDate = matchDate;
+                rec.teamASyncUuid = teamAUuid;
+                rec.teamBSyncUuid = teamBUuid;
+                rec.matchOvers = matchOvers;
+                rec.matchStatus = "SCHEDULED";
+                rec.updatedAt = now;
+                rec.isDeleted = false;
+                rec.remoteVersion = 0L;
+                enqueueOutboxInternal(db, SyncRecordModels.ENTITY_SCHEDULE, syncUuid,
+                        SyncRecordModels.OP_UPSERT, rec.toJson().toString());
+            }
 
             db.close(); // Closing database connection
         }catch (Exception e){
@@ -927,7 +1176,8 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
     //Used to view all schedules
     public String[][] viewAllSchedules() {
-        String selectQuery = "SELECT " + COLUMN_SCHEDULE_MATCH_DATE+ ", " +COLUMN_SCHEDULE_TEAMA_ID+ ", " +COLUMN_SCHEDULE_TEAMB_ID+ ", " +COLUMN_SCHEDULE_MATCH_TYPE+" FROM " +TABLE_SCHEDULE_DETAILS;
+        String selectQuery = "SELECT " + COLUMN_SCHEDULE_MATCH_DATE+ ", " +COLUMN_SCHEDULE_TEAMA_ID+ ", " +COLUMN_SCHEDULE_TEAMB_ID+ ", " +COLUMN_SCHEDULE_MATCH_TYPE+" FROM " +TABLE_SCHEDULE_DETAILS
+                + " WHERE (" + COLUMN_IS_DELETED + " IS NULL OR " + COLUMN_IS_DELETED + " = 0)";
 
         SQLiteDatabase db=this.getReadableDatabase();
         Cursor cursor = db.rawQuery(selectQuery, null);//selectQuery,selectedArguments
@@ -954,16 +1204,22 @@ public class DatabaseHandler extends SQLiteOpenHelper {
             Log.v("DatabaseHandler:","Exception thrown at viewAllSchedules  "+e);
             Log.v("DatabaseHandler:","Number of Rows "+numberOfRows);
             Log.v("DatabaseHandler:","Number of Columns "+numberOfColumns);
+        } finally {
+            cursor.close();
+            db.close();
         }
         return list;
     }
     public int getNumberOfSchedules(){
         int numberOfRows =0;
        try {
-           String selectQuery = "SELECT " + COLUMN_SCHEDULE_MATCH_DATE + ", " + COLUMN_SCHEDULE_TEAMA_ID + ", " + COLUMN_SCHEDULE_TEAMB_ID + ", " + COLUMN_SCHEDULE_MATCH_TYPE + " FROM " + TABLE_SCHEDULE_DETAILS;
+           String selectQuery = "SELECT " + COLUMN_SCHEDULE_MATCH_DATE + ", " + COLUMN_SCHEDULE_TEAMA_ID + ", " + COLUMN_SCHEDULE_TEAMB_ID + ", " + COLUMN_SCHEDULE_MATCH_TYPE + " FROM " + TABLE_SCHEDULE_DETAILS
+                   + " WHERE (" + COLUMN_IS_DELETED + " IS NULL OR " + COLUMN_IS_DELETED + " = 0)";
            SQLiteDatabase db = this.getReadableDatabase();
            Cursor cursor = db.rawQuery(selectQuery, null);//selectQuery,selectedArguments
            numberOfRows = cursor.getCount();
+           cursor.close();
+           db.close();
        }catch (Exception e){
            Log.v("DatabaseHandler:","Error in function getNumberOfSchedules"+e);
        }
@@ -1016,7 +1272,727 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     public void endOfMatchUpdate(int matchId) {
 
     }
+
+    // =========================================================================
+    // Offline-First Cloud Synchronization Engine Helpers (Added in DB v3)
+    // =========================================================================
+
+    private void enqueuePlayerOutboxById(SQLiteDatabase db, int playerId) {
+        PlayerSyncRecord rec = readPlayerSyncRecordInternal(db, COLUMN_PLAYER_ID + " = ?",
+                new String[]{String.valueOf(playerId)});
+        if (rec != null) {
+            try {
+                enqueueOutboxInternal(db, SyncRecordModels.ENTITY_PLAYER, rec.syncUuid,
+                        rec.isDeleted ? SyncRecordModels.OP_DELETE : SyncRecordModels.OP_UPSERT,
+                        rec.toJson().toString());
+            } catch (Exception e) {
+                Log.w("DatabaseHandler", "Failed to enqueue updated player outbox", e);
+            }
+        }
+    }
+
+    public int getPendingOutboxCount() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        try (Cursor c = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_SYNC_OUTBOX, null)) {
+            if (c.moveToFirst()) {
+                return c.getInt(0);
+            }
+        } catch (Exception e) {
+            Log.w("DatabaseHandler", "getPendingOutboxCount failed", e);
+        }
+        return 0;
+    }
+
+    public List<OutboxItem> getPendingOutboxItems() {
+        List<OutboxItem> items = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        String sql = "SELECT " + COLUMN_OUTBOX_ID + ", "
+                + COLUMN_OUTBOX_ENTITY_TYPE + ", "
+                + COLUMN_OUTBOX_ENTITY_UUID + ", "
+                + COLUMN_OUTBOX_OPERATION + ", "
+                + COLUMN_OUTBOX_PAYLOAD + ", "
+                + COLUMN_OUTBOX_CREATED_AT + ", "
+                + COLUMN_OUTBOX_RETRY_COUNT + ", "
+                + COLUMN_OUTBOX_LAST_ERROR
+                + " FROM " + TABLE_SYNC_OUTBOX
+                + " ORDER BY CASE " + COLUMN_OUTBOX_ENTITY_TYPE
+                + " WHEN '" + SyncRecordModels.ENTITY_TEAM + "' THEN 1"
+                + " WHEN '" + SyncRecordModels.ENTITY_GROUND + "' THEN 2"
+                + " WHEN '" + SyncRecordModels.ENTITY_PLAYER + "' THEN 3"
+                + " WHEN '" + SyncRecordModels.ENTITY_SCHEDULE + "' THEN 4"
+                + " ELSE 5 END, " + COLUMN_OUTBOX_ID + " ASC";
+        try (Cursor c = db.rawQuery(sql, null)) {
+            while (c.moveToNext()) {
+                OutboxItem item = new OutboxItem();
+                item.outboxId = c.getLong(0);
+                item.entityType = c.getString(1);
+                item.entityUuid = c.getString(2);
+                item.operation = c.getString(3);
+                item.payloadJson = c.getString(4);
+                item.createdAt = c.getLong(5);
+                item.retryCount = c.getInt(6);
+                item.lastError = c.isNull(7) ? "" : c.getString(7);
+                items.add(item);
+            }
+        }
+        return items;
+    }
+
+    public void markOutboxItemSynced(long outboxId, String entityType, String entityUuid, long remoteVersion) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            db.delete(TABLE_SYNC_OUTBOX, COLUMN_OUTBOX_ID + " = ?", new String[]{String.valueOf(outboxId)});
+            String table = resolveTableForEntityType(entityType);
+            if (table != null && entityUuid != null) {
+                ContentValues cv = new ContentValues();
+                cv.put(COLUMN_SYNC_STATUS, SyncRecordModels.STATUS_SYNCED);
+                cv.put(COLUMN_REMOTE_VERSION, remoteVersion);
+                db.update(table, cv, COLUMN_SYNC_UUID + " = ?", new String[]{entityUuid});
+            }
+        } finally {
+            db.close();
+        }
+    }
+
+    public void markOutboxItemFailed(long outboxId, String error) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            db.execSQL("UPDATE " + TABLE_SYNC_OUTBOX
+                    + " SET " + COLUMN_OUTBOX_RETRY_COUNT + " = " + COLUMN_OUTBOX_RETRY_COUNT + " + 1, "
+                    + COLUMN_OUTBOX_LAST_ERROR + " = ?"
+                    + " WHERE " + COLUMN_OUTBOX_ID + " = ?",
+                    new Object[]{error == null ? "Unknown error" : error, outboxId});
+        } finally {
+            db.close();
+        }
+    }
+
+    private String resolveTableForEntityType(String entityType) {
+        if (SyncRecordModels.ENTITY_TEAM.equals(entityType)) {
+            return TABLE_TEAM_DETAILS;
+        }
+        if (SyncRecordModels.ENTITY_PLAYER.equals(entityType)) {
+            return TABLE_PLAYER_DETAILS;
+        }
+        if (SyncRecordModels.ENTITY_SCHEDULE.equals(entityType)) {
+            return TABLE_SCHEDULE_DETAILS;
+        }
+        if (SyncRecordModels.ENTITY_GROUND.equals(entityType)) {
+            return TABLE_GROUND_DETAILS;
+        }
+        return null;
+    }
+
+    public String getTeamSyncUuid(int teamId) {
+        if (teamId <= 0) {
+            return "";
+        }
+        SQLiteDatabase db = this.getReadableDatabase();
+        try (Cursor c = db.query(TABLE_TEAM_DETAILS, new String[]{COLUMN_SYNC_UUID},
+                COLUMN_TEAM_ID + " = ?", new String[]{String.valueOf(teamId)},
+                null, null, null)) {
+            if (c.moveToFirst() && !c.isNull(0)) {
+                return c.getString(0);
+            }
+        }
+        return "";
+    }
+
+    public int getTeamIdBySyncUuid(String syncUuid) {
+        if (syncUuid == null || syncUuid.isEmpty()) {
+            return 0;
+        }
+        SQLiteDatabase db = this.getReadableDatabase();
+        return getTeamIdBySyncUuidInternal(db, syncUuid);
+    }
+
+    private int getTeamIdBySyncUuidInternal(SQLiteDatabase db, String syncUuid) {
+        if (syncUuid == null || syncUuid.isEmpty()) {
+            return 0;
+        }
+        try (Cursor c = db.query(TABLE_TEAM_DETAILS, new String[]{COLUMN_TEAM_ID},
+                COLUMN_SYNC_UUID + " = ?", new String[]{syncUuid},
+                null, null, null)) {
+            if (c.moveToFirst()) {
+                return c.getInt(0);
+            }
+        }
+        return 0;
+    }
+
+    public List<TeamSyncRecord> getAllTeamsForSync() {
+        List<TeamSyncRecord> result = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        try (Cursor c = db.query(TABLE_TEAM_DETAILS, null, null, null, null, null, COLUMN_TEAM_ID + " ASC")) {
+            while (c.moveToNext()) {
+                result.add(cursorToTeamSyncRecord(c));
+            }
+        }
+        return result;
+    }
+
+    public TeamSyncRecord getTeamBySyncUuid(String syncUuid) {
+        if (syncUuid == null || syncUuid.isEmpty()) {
+            return null;
+        }
+        SQLiteDatabase db = this.getReadableDatabase();
+        try (Cursor c = db.query(TABLE_TEAM_DETAILS, null,
+                COLUMN_SYNC_UUID + " = ?", new String[]{syncUuid},
+                null, null, null)) {
+            if (c.moveToFirst()) {
+                return cursorToTeamSyncRecord(c);
+            }
+        }
+        return null;
+    }
+
+    public TeamSyncRecord getTeamByNormalizedName(String normalizedName) {
+        if (normalizedName == null || normalizedName.isEmpty()) {
+            return null;
+        }
+        SQLiteDatabase db = this.getReadableDatabase();
+        try (Cursor c = db.query(TABLE_TEAM_DETAILS, null,
+                "LOWER(TRIM(" + COLUMN_TEAM_NAME + ")) = ?",
+                new String[]{SyncRecordModels.normalizeName(normalizedName)},
+                null, null, null)) {
+            if (c.moveToFirst()) {
+                return cursorToTeamSyncRecord(c);
+            }
+        }
+        return null;
+    }
+
+    private TeamSyncRecord cursorToTeamSyncRecord(Cursor c) {
+        TeamSyncRecord r = new TeamSyncRecord();
+        r.localTeamId = c.getInt(c.getColumnIndexOrThrow(COLUMN_TEAM_ID));
+        r.userEmailId = c.getString(c.getColumnIndexOrThrow(COLUMN_TEAM_USER_ID));
+        r.teamName = c.getString(c.getColumnIndexOrThrow(COLUMN_TEAM_NAME));
+        r.teamNameNormalized = SyncRecordModels.normalizeName(r.teamName);
+        r.matchWon = c.getInt(c.getColumnIndexOrThrow(COLUMN_TEAM_MATCHES_WON));
+        r.matchLost = c.getInt(c.getColumnIndexOrThrow(COLUMN_TEAM_MATCHES_LOST));
+        r.matchDraw = c.getInt(c.getColumnIndexOrThrow(COLUMN_TEAM_MATCHES_DRAW));
+        r.captainId = c.getInt(c.getColumnIndexOrThrow(COLUMN_TEAM_CAPTAIN_ID));
+        int uuidIdx = c.getColumnIndex(COLUMN_SYNC_UUID);
+        r.syncUuid = uuidIdx >= 0 && !c.isNull(uuidIdx) ? c.getString(uuidIdx) : "";
+        int clubIdx = c.getColumnIndex(COLUMN_CLUB_ID);
+        r.clubId = clubIdx >= 0 && !c.isNull(clubIdx) ? c.getString(clubIdx) : SyncPreferences.DEFAULT_LOCAL_CLUB_ID;
+        int updIdx = c.getColumnIndex(COLUMN_UPDATED_AT);
+        r.updatedAt = updIdx >= 0 && !c.isNull(updIdx) ? c.getLong(updIdx) : 0L;
+        int delIdx = c.getColumnIndex(COLUMN_IS_DELETED);
+        r.isDeleted = delIdx >= 0 && !c.isNull(delIdx) && c.getInt(delIdx) != 0;
+        int verIdx = c.getColumnIndex(COLUMN_REMOTE_VERSION);
+        r.remoteVersion = verIdx >= 0 && !c.isNull(verIdx) ? c.getLong(verIdx) : 0L;
+        int statusIdx = c.getColumnIndex(COLUMN_SYNC_STATUS);
+        r.syncStatus = statusIdx >= 0 && !c.isNull(statusIdx) ? c.getString(statusIdx) : SyncRecordModels.STATUS_DIRTY;
+        return r;
+    }
+
+    /**
+     * Upserts a remote {@link TeamSyncRecord} into {@code TEAM_DETAILS}, matching first by
+     * {@code SYNC_UUID} and falling back to normalized {@code TEAM_NAME} for first-time natural-key deduplication.
+     */
+    public void upsertTeamFromRemote(TeamSyncRecord remote, boolean markSynced) {
+        if (remote == null || remote.syncUuid == null || remote.syncUuid.isEmpty()) {
+            return;
+        }
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            TeamSyncRecord existing = null;
+            try (Cursor c = db.query(TABLE_TEAM_DETAILS, null,
+                    COLUMN_SYNC_UUID + " = ?", new String[]{remote.syncUuid},
+                    null, null, null)) {
+                if (c.moveToFirst()) {
+                    existing = cursorToTeamSyncRecord(c);
+                }
+            }
+            if (existing == null && remote.teamName != null && !remote.teamName.isEmpty()) {
+                try (Cursor c = db.query(TABLE_TEAM_DETAILS, null,
+                        "LOWER(TRIM(" + COLUMN_TEAM_NAME + ")) = ?",
+                        new String[]{SyncRecordModels.normalizeName(remote.teamName)},
+                        null, null, null)) {
+                    if (c.moveToFirst()) {
+                        existing = cursorToTeamSyncRecord(c);
+                    }
+                }
+            }
+
+            ContentValues cv = new ContentValues();
+            cv.put(COLUMN_TEAM_USER_ID, remote.userEmailId == null ? "aditya.juet@gmail.com" : remote.userEmailId);
+            cv.put(COLUMN_TEAM_NAME, remote.teamName);
+            cv.put(COLUMN_TEAM_MATCHES_WON, remote.matchWon);
+            cv.put(COLUMN_TEAM_MATCHES_LOST, remote.matchLost);
+            cv.put(COLUMN_TEAM_MATCHES_DRAW, remote.matchDraw);
+            cv.put(COLUMN_TEAM_CAPTAIN_ID, remote.captainId);
+            cv.put(COLUMN_SYNC_UUID, remote.syncUuid);
+            cv.put(COLUMN_CLUB_ID, remote.clubId == null ? getActiveClubId() : remote.clubId);
+            cv.put(COLUMN_UPDATED_AT, remote.updatedAt);
+            cv.put(COLUMN_IS_DELETED, remote.isDeleted ? 1 : 0);
+            cv.put(COLUMN_REMOTE_VERSION, remote.remoteVersion);
+            cv.put(COLUMN_SYNC_STATUS, markSynced ? SyncRecordModels.STATUS_SYNCED : SyncRecordModels.STATUS_DIRTY);
+
+            if (existing != null) {
+                String oldUuid = existing.syncUuid;
+                db.update(TABLE_TEAM_DETAILS, cv,
+                        COLUMN_TEAM_ID + " = ?", new String[]{String.valueOf(existing.localTeamId)});
+                if (oldUuid != null && !oldUuid.equals(remote.syncUuid)) {
+                    // Remove superseded local UUID from outbox after natural-key merge
+                    db.delete(TABLE_SYNC_OUTBOX,
+                            COLUMN_OUTBOX_ENTITY_TYPE + " = ? AND " + COLUMN_OUTBOX_ENTITY_UUID + " = ?",
+                            new String[]{SyncRecordModels.ENTITY_TEAM, oldUuid});
+                }
+            } else {
+                cv.put(COLUMN_TEAM_LOGO, "NotSet");
+                db.insert(TABLE_TEAM_DETAILS, null, cv);
+            }
+
+            if (!markSynced) {
+                enqueueOutboxInternal(db, SyncRecordModels.ENTITY_TEAM, remote.syncUuid,
+                        remote.isDeleted ? SyncRecordModels.OP_DELETE : SyncRecordModels.OP_UPSERT,
+                        remote.toJson().toString());
+            } else {
+                db.delete(TABLE_SYNC_OUTBOX,
+                        COLUMN_OUTBOX_ENTITY_TYPE + " = ? AND " + COLUMN_OUTBOX_ENTITY_UUID + " = ?",
+                        new String[]{SyncRecordModels.ENTITY_TEAM, remote.syncUuid});
+            }
+        } catch (Exception e) {
+            Log.w("DatabaseHandler", "upsertTeamFromRemote failed", e);
+        } finally {
+            db.close();
+        }
+    }
+
+    public List<PlayerSyncRecord> getAllPlayersForSync() {
+        List<PlayerSyncRecord> result = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        try (Cursor c = db.query(TABLE_PLAYER_DETAILS, null, null, null, null, null, COLUMN_PLAYER_ID + " ASC")) {
+            while (c.moveToNext()) {
+                result.add(cursorToPlayerSyncRecord(db, c));
+            }
+        }
+        return result;
+    }
+
+    public PlayerSyncRecord getPlayerBySyncUuid(String syncUuid) {
+        if (syncUuid == null || syncUuid.isEmpty()) {
+            return null;
+        }
+        SQLiteDatabase db = this.getReadableDatabase();
+        return readPlayerSyncRecordInternal(db, COLUMN_SYNC_UUID + " = ?", new String[]{syncUuid});
+    }
+
+    private PlayerSyncRecord readPlayerSyncRecordInternal(SQLiteDatabase db, String selection, String[] args) {
+        try (Cursor c = db.query(TABLE_PLAYER_DETAILS, null, selection, args, null, null, null)) {
+            if (c.moveToFirst()) {
+                return cursorToPlayerSyncRecord(db, c);
+            }
+        }
+        return null;
+    }
+
+    private PlayerSyncRecord cursorToPlayerSyncRecord(SQLiteDatabase db, Cursor c) {
+        PlayerSyncRecord r = new PlayerSyncRecord();
+        r.localPlayerId = c.getInt(c.getColumnIndexOrThrow(COLUMN_PLAYER_ID));
+        r.userEmailId = c.getString(c.getColumnIndexOrThrow(COLUMN_PLAYER_USER_ID));
+        r.playerName = c.getString(c.getColumnIndexOrThrow(COLUMN_PLAYER_NAME));
+        r.playerNameNormalized = SyncRecordModels.normalizeName(r.playerName);
+        r.playerEmail = c.getString(c.getColumnIndexOrThrow(COLUMN_PLAYER_EMAIL));
+        r.playerBatsman = c.getInt(c.getColumnIndexOrThrow(COLUMN_PLAYER_BATSMAN));
+        r.playerBowler = c.getInt(c.getColumnIndexOrThrow(COLUMN_PLAYER_BOWLER));
+        r.playerWicketKeeper = c.getInt(c.getColumnIndexOrThrow(COLUMN_PLAYER_WICKETKEEPER));
+        r.playerDob = c.getInt(c.getColumnIndexOrThrow(COLUMN_PLAYER_DOB));
+        r.localTeamId = c.getInt(c.getColumnIndexOrThrow(COLUMN_PLAYER_TEAM_ID));
+        r.teamSyncUuid = "";
+        if (r.localTeamId > 0) {
+            try (Cursor tc = db.query(TABLE_TEAM_DETAILS, new String[]{COLUMN_SYNC_UUID},
+                    COLUMN_TEAM_ID + " = ?", new String[]{String.valueOf(r.localTeamId)},
+                    null, null, null)) {
+                if (tc.moveToFirst() && !tc.isNull(0)) {
+                    r.teamSyncUuid = tc.getString(0);
+                }
+            }
+        }
+        r.totalRuns = c.getInt(c.getColumnIndexOrThrow(COLUMN_PLAYER_TOTAL_RUNS));
+        r.fifty = c.getInt(c.getColumnIndexOrThrow(COLUMN_PLAYER_FIFTY));
+        r.hundred = c.getInt(c.getColumnIndexOrThrow(COLUMN_PLAYER_HUNDRED));
+        r.twoHundred = c.getInt(c.getColumnIndexOrThrow(COLUMN_PLAYER_TWO_HUNDRED));
+        r.ballsFaced = c.getInt(c.getColumnIndexOrThrow(COLUMN_PLAYER_BALLS_FACED));
+        r.matchPlayed = c.getInt(c.getColumnIndexOrThrow(COLUMN_PLAYER_MATCH_PLAYED));
+        r.oversBowled = c.getInt(c.getColumnIndexOrThrow(COLUMN_PLAYER_OVERS_BOWLED));
+        r.wicketsTaken = c.getInt(c.getColumnIndexOrThrow(COLUMN_PLAYER_WICKETS_TAKEN));
+        r.maidenBowled = c.getInt(c.getColumnIndexOrThrow(COLUMN_PLAYER_MAIDEN_BOWLED));
+        r.widesCount = c.getInt(c.getColumnIndexOrThrow(COLUMN_PLAYER_WIDES_COUNT));
+        r.noBallCount = c.getInt(c.getColumnIndexOrThrow(COLUMN_PLAYER_NOBALL_COUNT));
+        r.runsGiven = c.getInt(c.getColumnIndexOrThrow(COLUMN_PLAYER_RUNS_GIVEN));
+        r.catches = c.getInt(c.getColumnIndexOrThrow(COLUMN_PLAYERS_CATCHES));
+
+        int uuidIdx = c.getColumnIndex(COLUMN_SYNC_UUID);
+        r.syncUuid = uuidIdx >= 0 && !c.isNull(uuidIdx) ? c.getString(uuidIdx) : "";
+        int clubIdx = c.getColumnIndex(COLUMN_CLUB_ID);
+        r.clubId = clubIdx >= 0 && !c.isNull(clubIdx) ? c.getString(clubIdx) : SyncPreferences.DEFAULT_LOCAL_CLUB_ID;
+        int updIdx = c.getColumnIndex(COLUMN_UPDATED_AT);
+        r.updatedAt = updIdx >= 0 && !c.isNull(updIdx) ? c.getLong(updIdx) : 0L;
+        int delIdx = c.getColumnIndex(COLUMN_IS_DELETED);
+        r.isDeleted = delIdx >= 0 && !c.isNull(delIdx) && c.getInt(delIdx) != 0;
+        int verIdx = c.getColumnIndex(COLUMN_REMOTE_VERSION);
+        r.remoteVersion = verIdx >= 0 && !c.isNull(verIdx) ? c.getLong(verIdx) : 0L;
+        int statusIdx = c.getColumnIndex(COLUMN_SYNC_STATUS);
+        r.syncStatus = statusIdx >= 0 && !c.isNull(statusIdx) ? c.getString(statusIdx) : SyncRecordModels.STATUS_DIRTY;
+        return r;
+    }
+
+    /**
+     * Upserts a remote {@link PlayerSyncRecord} into {@code PLAYER_DETAILS}, resolving
+     * {@code teamSyncUuid} to the local {@code TEAM_ID} foreign key.
+     */
+    public void upsertPlayerFromRemote(PlayerSyncRecord remote, boolean markSynced) {
+        if (remote == null || remote.syncUuid == null || remote.syncUuid.isEmpty()) {
+            return;
+        }
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            PlayerSyncRecord existing = readPlayerSyncRecordInternal(db,
+                    COLUMN_SYNC_UUID + " = ?", new String[]{remote.syncUuid});
+            if (existing == null && remote.playerName != null && !remote.playerName.isEmpty()) {
+                existing = readPlayerSyncRecordInternal(db,
+                        "LOWER(TRIM(" + COLUMN_PLAYER_NAME + ")) = ?",
+                        new String[]{SyncRecordModels.normalizeName(remote.playerName)});
+            }
+
+            int resolvedTeamId = getTeamIdBySyncUuidInternal(db, remote.teamSyncUuid);
+
+            ContentValues cv = new ContentValues();
+            cv.put(COLUMN_PLAYER_USER_ID, remote.userEmailId == null ? "aditya.juet@gmail.com" : remote.userEmailId);
+            cv.put(COLUMN_PLAYER_NAME, remote.playerName);
+            cv.put(COLUMN_PLAYER_EMAIL, remote.playerEmail == null ? "NotSet" : remote.playerEmail);
+            cv.put(COLUMN_PLAYER_BATSMAN, remote.playerBatsman);
+            cv.put(COLUMN_PLAYER_BOWLER, remote.playerBowler);
+            cv.put(COLUMN_PLAYER_WICKETKEEPER, remote.playerWicketKeeper);
+            cv.put(COLUMN_PLAYER_DOB, remote.playerDob);
+            cv.put(COLUMN_PLAYER_TEAM_ID, String.valueOf(resolvedTeamId));
+            cv.put(COLUMN_PLAYER_TOTAL_RUNS, remote.totalRuns);
+            cv.put(COLUMN_PLAYER_FIFTY, remote.fifty);
+            cv.put(COLUMN_PLAYER_HUNDRED, remote.hundred);
+            cv.put(COLUMN_PLAYER_TWO_HUNDRED, remote.twoHundred);
+            cv.put(COLUMN_PLAYER_BALLS_FACED, remote.ballsFaced);
+            cv.put(COLUMN_PLAYER_MATCH_PLAYED, remote.matchPlayed);
+            cv.put(COLUMN_PLAYER_OVERS_BOWLED, remote.oversBowled);
+            cv.put(COLUMN_PLAYER_WICKETS_TAKEN, remote.wicketsTaken);
+            cv.put(COLUMN_PLAYER_MAIDEN_BOWLED, remote.maidenBowled);
+            cv.put(COLUMN_PLAYER_WIDES_COUNT, remote.widesCount);
+            cv.put(COLUMN_PLAYER_NOBALL_COUNT, remote.noBallCount);
+            cv.put(COLUMN_PLAYER_RUNS_GIVEN, remote.runsGiven);
+            cv.put(COLUMN_PLAYERS_CATCHES, remote.catches);
+            cv.put(COLUMN_SYNC_UUID, remote.syncUuid);
+            cv.put(COLUMN_CLUB_ID, remote.clubId == null ? getActiveClubId() : remote.clubId);
+            cv.put(COLUMN_UPDATED_AT, remote.updatedAt);
+            cv.put(COLUMN_IS_DELETED, remote.isDeleted ? 1 : 0);
+            cv.put(COLUMN_REMOTE_VERSION, remote.remoteVersion);
+            cv.put(COLUMN_SYNC_STATUS, markSynced ? SyncRecordModels.STATUS_SYNCED : SyncRecordModels.STATUS_DIRTY);
+
+            if (existing != null) {
+                String oldUuid = existing.syncUuid;
+                db.update(TABLE_PLAYER_DETAILS, cv,
+                        COLUMN_PLAYER_ID + " = ?", new String[]{String.valueOf(existing.localPlayerId)});
+                if (oldUuid != null && !oldUuid.equals(remote.syncUuid)) {
+                    db.delete(TABLE_SYNC_OUTBOX,
+                            COLUMN_OUTBOX_ENTITY_TYPE + " = ? AND " + COLUMN_OUTBOX_ENTITY_UUID + " = ?",
+                            new String[]{SyncRecordModels.ENTITY_PLAYER, oldUuid});
+                }
+            } else {
+                cv.put(COLUMN_PLAYER_IMAGE, "NotSet");
+                db.insert(TABLE_PLAYER_DETAILS, null, cv);
+            }
+
+            if (!markSynced) {
+                enqueueOutboxInternal(db, SyncRecordModels.ENTITY_PLAYER, remote.syncUuid,
+                        remote.isDeleted ? SyncRecordModels.OP_DELETE : SyncRecordModels.OP_UPSERT,
+                        remote.toJson().toString());
+            } else {
+                db.delete(TABLE_SYNC_OUTBOX,
+                        COLUMN_OUTBOX_ENTITY_TYPE + " = ? AND " + COLUMN_OUTBOX_ENTITY_UUID + " = ?",
+                        new String[]{SyncRecordModels.ENTITY_PLAYER, remote.syncUuid});
+            }
+        } catch (Exception e) {
+            Log.w("DatabaseHandler", "upsertPlayerFromRemote failed", e);
+        } finally {
+            db.close();
+        }
+    }
+
+    public List<ScheduleSyncRecord> getAllSchedulesForSync() {
+        List<ScheduleSyncRecord> result = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        try (Cursor c = db.query(TABLE_SCHEDULE_DETAILS, null, null, null, null, null,
+                COLUMN_SCHEDULE_MATCH_ID + " ASC")) {
+            while (c.moveToNext()) {
+                result.add(cursorToScheduleSyncRecord(db, c));
+            }
+        }
+        return result;
+    }
+
+    public ScheduleSyncRecord getScheduleBySyncUuid(String syncUuid) {
+        if (syncUuid == null || syncUuid.isEmpty()) {
+            return null;
+        }
+        SQLiteDatabase db = this.getReadableDatabase();
+        try (Cursor c = db.query(TABLE_SCHEDULE_DETAILS, null,
+                COLUMN_SYNC_UUID + " = ?", new String[]{syncUuid},
+                null, null, null)) {
+            if (c.moveToFirst()) {
+                return cursorToScheduleSyncRecord(db, c);
+            }
+        }
+        return null;
+    }
+
+    private ScheduleSyncRecord cursorToScheduleSyncRecord(SQLiteDatabase db, Cursor c) {
+        ScheduleSyncRecord r = new ScheduleSyncRecord();
+        r.localScheduleId = c.getInt(c.getColumnIndexOrThrow(COLUMN_SCHEDULE_MATCH_ID));
+        r.userEmailId = c.getString(c.getColumnIndexOrThrow(COLUMN_SCHEDULE_USER_ID));
+        r.matchDate = c.getString(c.getColumnIndexOrThrow(COLUMN_SCHEDULE_MATCH_DATE));
+        r.localTeamAId = c.getInt(c.getColumnIndexOrThrow(COLUMN_SCHEDULE_TEAMA_ID));
+        r.localTeamBId = c.getInt(c.getColumnIndexOrThrow(COLUMN_SCHEDULE_TEAMB_ID));
+        r.teamASyncUuid = "";
+        r.teamBSyncUuid = "";
+        if (r.localTeamAId > 0) {
+            try (Cursor tc = db.query(TABLE_TEAM_DETAILS, new String[]{COLUMN_SYNC_UUID},
+                    COLUMN_TEAM_ID + " = ?", new String[]{String.valueOf(r.localTeamAId)},
+                    null, null, null)) {
+                if (tc.moveToFirst() && !tc.isNull(0)) {
+                    r.teamASyncUuid = tc.getString(0);
+                }
+            }
+        }
+        if (r.localTeamBId > 0) {
+            try (Cursor tc = db.query(TABLE_TEAM_DETAILS, new String[]{COLUMN_SYNC_UUID},
+                    COLUMN_TEAM_ID + " = ?", new String[]{String.valueOf(r.localTeamBId)},
+                    null, null, null)) {
+                if (tc.moveToFirst() && !tc.isNull(0)) {
+                    r.teamBSyncUuid = tc.getString(0);
+                }
+            }
+        }
+        r.matchOvers = c.getInt(c.getColumnIndexOrThrow(COLUMN_SCHEDULE_MATCH_TYPE));
+        int statusCol = c.getColumnIndex(COLUMN_SCHEDULE_MATCH_STATUS);
+        r.matchStatus = statusCol >= 0 && !c.isNull(statusCol) ? c.getString(statusCol) : "SCHEDULED";
+
+        int uuidIdx = c.getColumnIndex(COLUMN_SYNC_UUID);
+        r.syncUuid = uuidIdx >= 0 && !c.isNull(uuidIdx) ? c.getString(uuidIdx) : "";
+        int clubIdx = c.getColumnIndex(COLUMN_CLUB_ID);
+        r.clubId = clubIdx >= 0 && !c.isNull(clubIdx) ? c.getString(clubIdx) : SyncPreferences.DEFAULT_LOCAL_CLUB_ID;
+        int updIdx = c.getColumnIndex(COLUMN_UPDATED_AT);
+        r.updatedAt = updIdx >= 0 && !c.isNull(updIdx) ? c.getLong(updIdx) : 0L;
+        int delIdx = c.getColumnIndex(COLUMN_IS_DELETED);
+        r.isDeleted = delIdx >= 0 && !c.isNull(delIdx) && c.getInt(delIdx) != 0;
+        int verIdx = c.getColumnIndex(COLUMN_REMOTE_VERSION);
+        r.remoteVersion = verIdx >= 0 && !c.isNull(verIdx) ? c.getLong(verIdx) : 0L;
+        int statusIdx = c.getColumnIndex(COLUMN_SYNC_STATUS);
+        r.syncStatus = statusIdx >= 0 && !c.isNull(statusIdx) ? c.getString(statusIdx) : SyncRecordModels.STATUS_DIRTY;
+        return r;
+    }
+
+    /**
+     * Upserts a remote {@link ScheduleSyncRecord} into {@code SCHEDULE_DETAILS}, resolving
+     * {@code teamASyncUuid} and {@code teamBSyncUuid} to local {@code TEAM_ID} foreign keys.
+     */
+    public void upsertScheduleFromRemote(ScheduleSyncRecord remote, boolean markSynced) {
+        if (remote == null || remote.syncUuid == null || remote.syncUuid.isEmpty()) {
+            return;
+        }
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            int teamAId = getTeamIdBySyncUuidInternal(db, remote.teamASyncUuid);
+            int teamBId = getTeamIdBySyncUuidInternal(db, remote.teamBSyncUuid);
+
+            ScheduleSyncRecord existing = null;
+            try (Cursor c = db.query(TABLE_SCHEDULE_DETAILS, null,
+                    COLUMN_SYNC_UUID + " = ?", new String[]{remote.syncUuid},
+                    null, null, null)) {
+                if (c.moveToFirst()) {
+                    existing = cursorToScheduleSyncRecord(db, c);
+                }
+            }
+            if (existing == null && teamAId > 0 && teamBId > 0 && remote.matchDate != null) {
+                try (Cursor c = db.query(TABLE_SCHEDULE_DETAILS, null,
+                        COLUMN_SCHEDULE_MATCH_DATE + " = ? AND "
+                                + COLUMN_SCHEDULE_TEAMA_ID + " = ? AND "
+                                + COLUMN_SCHEDULE_TEAMB_ID + " = ? AND "
+                                + COLUMN_SCHEDULE_MATCH_TYPE + " = ?",
+                        new String[]{
+                                remote.matchDate,
+                                String.valueOf(teamAId),
+                                String.valueOf(teamBId),
+                                String.valueOf(remote.matchOvers)
+                        },
+                        null, null, null)) {
+                    if (c.moveToFirst()) {
+                        existing = cursorToScheduleSyncRecord(db, c);
+                    }
+                }
+            }
+
+            ContentValues cv = new ContentValues();
+            cv.put(COLUMN_SCHEDULE_USER_ID, remote.userEmailId == null ? "aditya.juet@gmail.com" : remote.userEmailId);
+            cv.put(COLUMN_SCHEDULE_MATCH_DATE, remote.matchDate);
+            cv.put(COLUMN_SCHEDULE_TEAMA_ID, teamAId);
+            cv.put(COLUMN_SCHEDULE_TEAMB_ID, teamBId);
+            cv.put(COLUMN_SCHEDULE_MATCH_TYPE, remote.matchOvers);
+            cv.put(COLUMN_SCHEDULE_MATCH_STATUS, remote.matchStatus == null ? "SCHEDULED" : remote.matchStatus);
+            cv.put(COLUMN_SYNC_UUID, remote.syncUuid);
+            cv.put(COLUMN_CLUB_ID, remote.clubId == null ? getActiveClubId() : remote.clubId);
+            cv.put(COLUMN_UPDATED_AT, remote.updatedAt);
+            cv.put(COLUMN_IS_DELETED, remote.isDeleted ? 1 : 0);
+            cv.put(COLUMN_REMOTE_VERSION, remote.remoteVersion);
+            cv.put(COLUMN_SYNC_STATUS, markSynced ? SyncRecordModels.STATUS_SYNCED : SyncRecordModels.STATUS_DIRTY);
+
+            if (existing != null) {
+                String oldUuid = existing.syncUuid;
+                db.update(TABLE_SCHEDULE_DETAILS, cv,
+                        COLUMN_SCHEDULE_MATCH_ID + " = ?",
+                        new String[]{String.valueOf(existing.localScheduleId)});
+                if (oldUuid != null && !oldUuid.equals(remote.syncUuid)) {
+                    db.delete(TABLE_SYNC_OUTBOX,
+                            COLUMN_OUTBOX_ENTITY_TYPE + " = ? AND " + COLUMN_OUTBOX_ENTITY_UUID + " = ?",
+                            new String[]{SyncRecordModels.ENTITY_SCHEDULE, oldUuid});
+                }
+            } else {
+                db.insert(TABLE_SCHEDULE_DETAILS, null, cv);
+            }
+
+            if (!markSynced) {
+                enqueueOutboxInternal(db, SyncRecordModels.ENTITY_SCHEDULE, remote.syncUuid,
+                        remote.isDeleted ? SyncRecordModels.OP_DELETE : SyncRecordModels.OP_UPSERT,
+                        remote.toJson().toString());
+            } else {
+                db.delete(TABLE_SYNC_OUTBOX,
+                        COLUMN_OUTBOX_ENTITY_TYPE + " = ? AND " + COLUMN_OUTBOX_ENTITY_UUID + " = ?",
+                        new String[]{SyncRecordModels.ENTITY_SCHEDULE, remote.syncUuid});
+            }
+        } catch (Exception e) {
+            Log.w("DatabaseHandler", "upsertScheduleFromRemote failed", e);
+        } finally {
+            db.close();
+        }
+    }
+
+    /**
+     * Soft-deletes a team using a tombstone ({@code IS_DELETED = 1}) and enqueues a DELETE operation.
+     */
+    public void softDeleteTeam(int teamId) {
+        TeamSyncRecord rec = null;
+        for (TeamSyncRecord item : getAllTeamsForSync()) {
+            if (item.localTeamId == teamId) {
+                rec = item;
+                break;
+            }
+        }
+        if (rec == null) {
+            return;
+        }
+        rec.isDeleted = true;
+        rec.updatedAt = System.currentTimeMillis();
+        upsertTeamFromRemote(rec, false);
+    }
+
+    /**
+     * Soft-deletes a player using a tombstone ({@code IS_DELETED = 1}) and enqueues a DELETE operation.
+     */
+    public void softDeletePlayer(int playerId) {
+        PlayerSyncRecord rec = null;
+        for (PlayerSyncRecord item : getAllPlayersForSync()) {
+            if (item.localPlayerId == playerId) {
+                rec = item;
+                break;
+            }
+        }
+        if (rec == null) {
+            return;
+        }
+        rec.isDeleted = true;
+        rec.updatedAt = System.currentTimeMillis();
+        upsertPlayerFromRemote(rec, false);
+    }
+
+    /**
+     * Enqueues all active local records into {@code SYNC_OUTBOX} under {@code clubId}
+     * for first-time synchronization.
+     */
+    public void enqueueAllLocalRecordsForClub(String clubId) {
+        String targetClub = SyncPreferences.sanitizeClubId(clubId);
+        List<TeamSyncRecord> teams = getAllTeamsForSync();
+        List<PlayerSyncRecord> players = getAllPlayersForSync();
+        List<ScheduleSyncRecord> schedules = getAllSchedulesForSync();
+
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            for (TeamSyncRecord t : teams) {
+                t.clubId = targetClub;
+                if (t.updatedAt <= 0L) {
+                    t.updatedAt = System.currentTimeMillis();
+                }
+                ContentValues cv = new ContentValues();
+                cv.put(COLUMN_CLUB_ID, targetClub);
+                cv.put(COLUMN_UPDATED_AT, t.updatedAt);
+                db.update(TABLE_TEAM_DETAILS, cv, COLUMN_TEAM_ID + " = ?",
+                        new String[]{String.valueOf(t.localTeamId)});
+                enqueueOutboxInternal(db, SyncRecordModels.ENTITY_TEAM, t.syncUuid,
+                        t.isDeleted ? SyncRecordModels.OP_DELETE : SyncRecordModels.OP_UPSERT,
+                        t.toJson().toString());
+            }
+            for (PlayerSyncRecord p : players) {
+                p.clubId = targetClub;
+                if (p.updatedAt <= 0L) {
+                    p.updatedAt = System.currentTimeMillis();
+                }
+                ContentValues cv = new ContentValues();
+                cv.put(COLUMN_CLUB_ID, targetClub);
+                cv.put(COLUMN_UPDATED_AT, p.updatedAt);
+                db.update(TABLE_PLAYER_DETAILS, cv, COLUMN_PLAYER_ID + " = ?",
+                        new String[]{String.valueOf(p.localPlayerId)});
+                enqueueOutboxInternal(db, SyncRecordModels.ENTITY_PLAYER, p.syncUuid,
+                        p.isDeleted ? SyncRecordModels.OP_DELETE : SyncRecordModels.OP_UPSERT,
+                        p.toJson().toString());
+            }
+            for (ScheduleSyncRecord s : schedules) {
+                s.clubId = targetClub;
+                if (s.updatedAt <= 0L) {
+                    s.updatedAt = System.currentTimeMillis();
+                }
+                ContentValues cv = new ContentValues();
+                cv.put(COLUMN_CLUB_ID, targetClub);
+                cv.put(COLUMN_UPDATED_AT, s.updatedAt);
+                db.update(TABLE_SCHEDULE_DETAILS, cv, COLUMN_SCHEDULE_MATCH_ID + " = ?",
+                        new String[]{String.valueOf(s.localScheduleId)});
+                enqueueOutboxInternal(db, SyncRecordModels.ENTITY_SCHEDULE, s.syncUuid,
+                        s.isDeleted ? SyncRecordModels.OP_DELETE : SyncRecordModels.OP_UPSERT,
+                        s.toJson().toString());
+            }
+        } catch (Exception e) {
+            Log.w("DatabaseHandler", "enqueueAllLocalRecordsForClub failed", e);
+        } finally {
+            db.close();
+        }
+    }
+
+    /**
+     * Clears local club tables and pending outbox when switching to a different club account
+     * so records from the previous club are never leaked into the new club.
+     */
+    public void clearLocalDataForClubSwitch() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            db.delete(TABLE_SYNC_OUTBOX, null, null);
+            db.delete(TABLE_SCHEDULE_DETAILS, null, null);
+            db.delete(TABLE_PLAYER_DETAILS, null, null);
+            db.delete(TABLE_TEAM_DETAILS, null, null);
+            db.delete(TABLE_GROUND_DETAILS, null, null);
+        } finally {
+            db.close();
+        }
+    }
 }
+
 
 
 

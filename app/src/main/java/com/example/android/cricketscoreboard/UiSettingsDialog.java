@@ -3,12 +3,15 @@ package com.example.android.cricketscoreboard;
 import android.app.Activity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+
+import com.example.android.cricketscoreboard.sync.CloudSyncDialog;
 
 /**
  * Modal dialog allowing the user to customize theme mode, accent palette, layout density,
@@ -64,7 +67,7 @@ public final class UiSettingsDialog {
         CheckBox skipSplashBox = view.findViewById(R.id.pref_skip_splash);
         skipSplashBox.setChecked(prefs.isSkipSplashEnabled());
 
-        new AlertDialog.Builder(activity)
+        AlertDialog dialogInstance = new AlertDialog.Builder(activity)
                 .setTitle("Appearance & Preferences")
                 .setView(view)
                 .setPositiveButton("Apply", (dialog, which) -> {
@@ -109,6 +112,16 @@ public final class UiSettingsDialog {
                     activity.recreate();
                 })
                 .setNegativeButton("Cancel", null)
-                .show();
+                .create();
+
+        Button cloudSyncBtn = view.findViewById(R.id.btn_open_cloud_sync);
+        if (cloudSyncBtn != null) {
+            cloudSyncBtn.setOnClickListener(v -> {
+                dialogInstance.dismiss();
+                CloudSyncDialog.show(activity, null);
+            });
+        }
+
+        dialogInstance.show();
     }
 }

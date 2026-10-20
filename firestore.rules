@@ -1,0 +1,83 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isClubMember(clubId) {
+      return isSignedIn() && (
+        clubId == ("club_" + request.auth.uid) ||
+        exists(/databases/$(database)/documents/clubs/$(clubId)/members/$(request.auth.uid))
+      );
+    }
+
+    function hasValidSyncMeta() {
+      return request.resource.data.keys().hasAll(['syncUuid', 'clubId', 'updatedAt', 'isDeleted', 'remoteVersion'])
+        && request.resource.data.syncUuid is string
+        && request.resource.data.syncUuid.size() > 0
+        && request.resource.data.clubId is string
+        && request.resource.data.updatedAt is int
+        && request.resource.data.isDeleted is bool
+        && request.resource.data.remoteVersion is int;
+    }
+
+    match /clubs/{clubId} {
+      allow read: if isClubMember(clubId);
+      allow create: if isSignedIn();
+      allow update: if isClubMember(clubId);
+      allow delete: if false;
+
+      match /members/{memberUid} {
+        allow read: if isClubMember(clubId);
+        allow write: if isSignedIn() && (
+          request.auth.uid == memberUid ||
+          resource.data.role == 'owner'
+        );
+      }
+
+      match /teams/{teamUuid} {
+        allow read: if isClubMember(clubId);
+        allow create, update: if isClubMember(clubId)
+          && hasValidSyncMeta()
+          && request.resource.data.syncUuid == teamUuid
+          && request.resource.data.clubId == clubId
+          && request.resource.data.teamName is string
+          && request.resource.data.teamName.size() > 0;
+        allow delete: if false; // Enforce tombstone soft-deletes (isDeleted == true)
+      }
+
+      match /players/{playerUuid} {
+        allow read: if isClubMember(clubId);
+        allow create, update: if isClubMember(clubId)
+          && hasValidSyncMeta()
+          && request.resource.data.syncUuid == playerUuid
+          && request.resource.data.clubId == clubId
+          && request.resource.data.playerName is string
+          && request.resource.data.playerName.size() > 0;
+        allow delete: if false;
+      }
+
+      match /schedules/{scheduleUuid} {
+        allow read: if isClubMember(clubId);
+        allow create, update: if isClubMember(clubId)
+          && hasValidSyncMeta()
+          && request.resource.data.syncUuid == scheduleUuid
+          && request.resource.data.clubId == clubId
+          && request.resource.data.matchDate is string
+          && request.resource.data.matchDate.size() > 0;
+        allow delete: if false;
+      }
+
+      match /grounds/{groundUuid} {
+        allow read: if isClubMember(clubId);
+        allow create, update: if isClubMember(clubId)
+          && hasValidSyncMeta()
+          && request.resource.data.syncUuid == groundUuid
+          && request.resource.data.clubId == clubId;
+        allow delete: if false;
+      }
+    }
+  }
+}
