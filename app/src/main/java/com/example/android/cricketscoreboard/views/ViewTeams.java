@@ -93,7 +93,8 @@ public class ViewTeams extends AppCompatActivity {
        //     list.add(values[i]);
        // }
         final StableArrayAdapter teamListAdapter = new StableArrayAdapter(this,
-                android.R.layout.preference_category, valTeam);
+                android.R.layout.simple_spinner_item, valTeam);
+        teamListAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         teamList.setAdapter(teamListAdapter);
         teamList.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){
             public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
@@ -152,7 +153,8 @@ public class ViewTeams extends AppCompatActivity {
             }
 
         final StableArrayAdapter addPlayerListAdapter = new StableArrayAdapter(this,
-                    android.R.layout.preference_category, valAddPlayer);
+                    android.R.layout.simple_spinner_item, valAddPlayer);
+        addPlayerListAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
             if(valAddPlayer.size()>0) {
                 addPlayer_spinner.setAdapter(addPlayerListAdapter);
@@ -176,7 +178,8 @@ public class ViewTeams extends AppCompatActivity {
             }
 
             final StableArrayAdapter removelayerListAdapter = new StableArrayAdapter(this,
-                    android.R.layout.preference_category, valRemovePlayer);
+                    android.R.layout.simple_spinner_item, valRemovePlayer);
+            removelayerListAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
             if(valRemovePlayer.size()>0) {
 

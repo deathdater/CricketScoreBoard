@@ -1,248 +1,266 @@
+<?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/activity_player_details"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:background="@color/Color_Background"
+    android:fillViewport="true"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin"
     tools:context="com.example.android.cricketscoreboard.views.PlayerDetailsActivity">
 
-<RelativeLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/rectangle">
+        android:background="@drawable/rectangle"
+        android:orientation="vertical"
+        android:padding="@dimen/space_lg">
+
         <TextView
             android:id="@+id/playerDetails_text_view"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-
-            android:layout_centerHorizontal="true"
-            android:fontFamily="@string/string_App_font"
             android:text="New Player Details"
-            android:textAlignment="center"
-            android:textSize="32sp" />
+            android:textAppearance="@style/TextAppearance.Cricket.ScreenTitle" />
 
-        <ImageView
-            android:id="@+id/player_img"
-            android:layout_width="150px"
-            android:layout_height="150px"
-            android:layout_below="@id/playerDetails_text_view"
-            android:background="@drawable/user_male_circle_2"
-            />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Register a player and select their primary roles on the pitch."
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="13sp" />
 
+        <!-- Player Avatar & Photo Actions -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_lg"
+            android:background="@drawable/bg_stat_chip"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="@dimen/space_md">
 
+            <ImageView
+                android:id="@+id/player_img"
+                android:layout_width="@dimen/avatar_size_md"
+                android:layout_height="@dimen/avatar_size_md"
+                android:background="@drawable/user_male_circle_2"
+                android:contentDescription="Player avatar" />
 
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_lg"
+                android:layout_marginLeft="@dimen/space_lg"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/playerImage_text_view"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Player Avatar"
+                    android:textAppearance="@style/TextAppearance.Cricket.FieldLabel" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/browse_playerPic_btn"
+                        style="@style/Widget.Cricket.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="6dp"
+                        android:layout_marginRight="6dp"
+                        android:layout_weight="1"
+                        android:text="Browse" />
+
+                    <Button
+                        android:id="@+id/default_playerPic_btn"
+                        style="@style/Widget.Cricket.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Default" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Player Name -->
         <TextView
             android:id="@+id/playerName_text_view"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_toRightOf="@id/player_img"
-            android:layout_below="@id/playerDetails_text_view"
-            android:fontFamily="@string/string_App_font"
-            android:paddingBottom="5dp"
-            android:layout_marginTop="20dp"
-            android:paddingLeft="5dp"
-            android:text="Player Name"
-            android:textSize="16sp"
-            />
+            android:layout_marginTop="@dimen/space_lg"
+            android:text="Player Name *"
+            android:textAppearance="@style/TextAppearance.Cricket.FieldLabel" />
 
-    <EditText
+        <EditText
             android:id="@+id/playerName_edit_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@id/playerName_text_view"
-            android:layout_toRightOf="@id/player_img"
-            android:inputType="textPersonName"
-            android:lines="1"
-            android:textAllCaps="false"
-            android:textStyle="bold"
-            android:typeface="monospace"
+            android:layout_marginTop="4dp"
+            android:autofillHints="name"
             android:hapticFeedbackEnabled="true"
-            android:width="40dp" />
+            android:hint="Enter full name"
+            android:inputType="textPersonName|textCapWords"
+            android:lines="1"
+            android:minHeight="48dp"
+            android:textAllCaps="false"
+            android:textSize="16sp" />
+
+        <!-- Player's Team Name Search -->
         <TextView
             android:id="@+id/playerTeamName_text_view"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_toRightOf="@id/player_img"
-            android:layout_below="@id/playerName_edit_text"
-            android:fontFamily="@string/string_App_font"
-            android:paddingBottom="5dp"
-            android:paddingTop="5dp"
-            android:paddingLeft="5dp"
-            android:text="Player's Team Name"
-            android:textSize="16sp"
-            />
+            android:layout_marginTop="@dimen/space_md"
+            android:text="Player's Team (Optional)"
+            android:textAppearance="@style/TextAppearance.Cricket.FieldLabel" />
+
         <SearchView
             android:id="@+id/playerTeamName_search_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@id/playerTeamName_text_view"
-            android:layout_toRightOf="@id/player_img"
-            android:inputType="textPersonName"
-            android:lines="1"
-            android:textAllCaps="false"
-            android:textStyle="bold"
-            android:typeface="monospace"
-            android:hapticFeedbackEnabled="true"
-            />
+            android:layout_marginTop="4dp"
+            android:background="@drawable/bg_stat_chip"
+            android:iconifiedByDefault="false"
+            android:queryHint="Search or assign later in Teams" />
 
-        <TextView
-            android:id="@+id/playerImage_text_view"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/player_img"
-            android:layout_toLeftOf="@id/playerTeamName_search_text"
-            android:fontFamily="@string/string_App_font"
-            android:paddingTop="5dp"
-            android:text="Player Image"
-            android:textAlignment="center"
-
-            android:textSize="10sp" />
+        <!-- Player Email -->
         <TextView
             android:id="@+id/playerEmail_text_view"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_toRightOf="@id/player_img"
-            android:layout_below="@id/playerTeamName_search_text"
-            android:fontFamily="@string/string_App_font"
-            android:paddingBottom="5dp"
-            android:paddingTop="5dp"
-            android:paddingLeft="5dp"
+            android:layout_marginTop="@dimen/space_md"
             android:text="Player E-Mail"
-            android:textSize="16sp"
-            />
+            android:textAppearance="@style/TextAppearance.Cricket.FieldLabel" />
+
         <EditText
             android:id="@+id/playerEmail_edit_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@id/playerEmail_text_view"
-            android:layout_toRightOf="@id/player_img"
+            android:layout_marginTop="4dp"
+            android:autofillHints="emailAddress"
+            android:hapticFeedbackEnabled="true"
+            android:hint="player@example.com"
             android:inputType="textEmailAddress"
             android:lines="1"
+            android:minHeight="48dp"
             android:textAllCaps="false"
-            android:textStyle="bold"
-            android:typeface="monospace"
-            android:hapticFeedbackEnabled="true"
-            />
-        <Button
-            android:id="@+id/browse_playerPic_btn"
-            android:layout_width="wrap_content"
-            android:layout_height="50dp"
-            android:layout_below="@id/playerImage_text_view"
-            android:layout_toLeftOf="@id/playerTeamName_text_view"
-            android:fontFamily="@string/string_App_font"
-            android:text="Browse"
-            android:textSize="12dp"/>
+            android:textSize="16sp" />
 
-        <Button
-            android:id="@+id/default_playerPic_btn"
-            android:layout_width="wrap_content"
-            android:layout_height="60dp"
-            android:layout_below="@id/browse_playerPic_btn"
-            android:layout_toLeftOf="@id/playerTeamName_text_view"
-            android:fontFamily="@string/string_App_font"
-            android:text="Use Default"
-            android:textSize="12dp"/>
+        <!-- Player Roles & Styles -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_lg"
+            android:text="Playing Roles (select at least one) *"
+            android:textAppearance="@style/TextAppearance.Cricket.SectionTitle" />
 
-        <CheckBox android:id="@+id/checkbox_batsmen"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@id/playerEmail_edit_text"
-            android:layout_toRightOf="@id/player_img"
-            android:text="Batsmen"
-            android:fontFamily="@string/string_App_font"
-            android:layout_centerHorizontal="true"
-            android:onClick="onCheckBatsmen"/>
-        <RadioGroup
-            android:id="@+id/batsmenStyle_radioGrp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/checkbox_batsmen"
-            android:layout_toRightOf="@id/player_img"
-            android:visibility="invisible"
-            android:layout_marginLeft="25dp"
-            android:paddingRight="5dp"
-            android:orientation="horizontal">
-            <RadioButton
-                android:id="@+id/radioBtn_RHBatsmen"
-                android:layout_width="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_stat_chip"
+            android:orientation="vertical"
+            android:padding="@dimen/space_sm">
+
+            <CheckBox
+                android:id="@+id/checkbox_batsmen"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text= "RHB"
-                android:fontFamily="@string/string_App_font"
-                />
-            <RadioButton
-                android:id="@+id/radioBtn_LHBatsmen"
-                android:layout_marginLeft="30dp"
-                android:layout_width="wrap_content"
+                android:minHeight="48dp"
+                android:onClick="onCheckBatsmen"
+                android:text="Batsmen"
+                android:textStyle="bold" />
+
+            <RadioGroup
+                android:id="@+id/batsmenStyle_radioGrp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="LHB"
-                android:fontFamily="@string/string_App_font" />
+                android:layout_marginStart="28dp"
+                android:layout_marginLeft="28dp"
+                android:orientation="horizontal"
+                android:visibility="gone">
 
-        </RadioGroup>
+                <RadioButton
+                    android:id="@+id/radioBtn_RHBatsmen"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
+                    android:text="RHB (Right-Hand)" />
 
-        <CheckBox android:id="@+id/checkbox_bowler"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/batsmenStyle_radioGrp"
-            android:layout_toRightOf="@id/player_img"
-            android:layout_marginTop="10dp"
-            android:text="Bowler"
-            android:fontFamily="@string/string_App_font"
-            android:layout_centerHorizontal="true"
-            android:onClick="onCheckBowler"/>
-        <RadioGroup
-            android:id="@+id/bowlerStyle_radioGrp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="25dp"
-            android:layout_below="@id/checkbox_bowler"
-            android:layout_toRightOf="@id/player_img"
-            android:visibility="invisible"
-            android:paddingRight="5dp"
-            android:orientation="horizontal">
-            <RadioButton
-                android:id="@+id/radioBtn_RHBowler"
-                android:layout_width="wrap_content"
+                <RadioButton
+                    android:id="@+id/radioBtn_LHBatsmen"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginLeft="20dp"
+                    android:minHeight="48dp"
+                    android:text="LHB (Left-Hand)" />
+            </RadioGroup>
+
+            <CheckBox
+                android:id="@+id/checkbox_bowler"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text= "RHB"
-                android:fontFamily="@string/string_App_font"
-                />
-            <RadioButton
-                android:id="@+id/radioBtn_LHBowler"
-                android:layout_marginLeft="30dp"
-                android:layout_width="wrap_content"
+                android:minHeight="48dp"
+                android:onClick="onCheckBowler"
+                android:text="Bowler"
+                android:textStyle="bold" />
+
+            <RadioGroup
+                android:id="@+id/bowlerStyle_radioGrp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="LHB"
-                android:fontFamily="@string/string_App_font" />
+                android:layout_marginStart="28dp"
+                android:layout_marginLeft="28dp"
+                android:orientation="horizontal"
+                android:visibility="gone">
 
-        </RadioGroup>
+                <RadioButton
+                    android:id="@+id/radioBtn_RHBowler"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
+                    android:text="RHB (Right-Arm)" />
 
-        <CheckBox android:id="@+id/checkbox_wicketKeeper"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/bowlerStyle_radioGrp"
-            android:layout_toRightOf="@id/player_img"
-            android:text="Wicket-Keeper"
-            android:layout_marginTop="10dp"
-            android:fontFamily="@string/string_App_font"
-            android:layout_centerHorizontal="true"
-            android:onClick="onCheckWK"
-            />
+                <RadioButton
+                    android:id="@+id/radioBtn_LHBowler"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginLeft="20dp"
+                    android:minHeight="48dp"
+                    android:text="LHB (Left-Arm)" />
+            </RadioGroup>
+
+            <CheckBox
+                android:id="@+id/checkbox_wicketKeeper"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:onClick="onCheckWK"
+                android:text="Wicket-Keeper"
+                android:textStyle="bold" />
+        </LinearLayout>
+
         <Button
             android:id="@+id/playerDetails_save_btn"
-            android:layout_width="wrap_content"
+            style="@style/Widget.Cricket.PrimaryButton"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@id/checkbox_wicketKeeper"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="5dp"
-            android:fontFamily="@string/string_App_font"
-            android:text="Save"
+            android:layout_marginTop="@dimen/space_xl"
             android:onClick="saveNewPlayer"
-            android:textStyle="bold" />
-    </RelativeLayout>
+            android:text="Save Player" />
 
+    </LinearLayout>
 </ScrollView>
-

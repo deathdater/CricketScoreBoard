@@ -1,9 +1,12 @@
 package com.example.android.cricketscoreboard.views;
 
+import android.content.Intent;
 import android.graphics.Typeface;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.RadioButton;
@@ -23,11 +26,23 @@ public class ViewSchedules extends AppCompatActivity {
         setContentView(R.layout.activity_view_schedules);
         init();
 
-
+        Button editBtn = findViewById(R.id.EditScheduleButton);
+        if (editBtn != null) {
+            editBtn.setOnClickListener(v -> startActivity(new Intent(this, ScheduleMatches.class)));
+        }
+        Button startBtn = findViewById(R.id.StartScheduleButton);
+        if (startBtn != null) {
+            startBtn.setOnClickListener(v -> startActivity(new Intent(this, ScorerPadActivity.class)));
+        }
     }
 
     public void init(){
         DatabaseHandler db=new DatabaseHandler(this);
+        int scheduleCount = db.getNumberOfSchedules();
+        TextView emptyHint = findViewById(R.id.schedules_empty_text);
+        if (emptyHint != null && scheduleCount == 0) {
+            emptyHint.setText("No matches scheduled yet. Tap 'Edit Schedule' below to create your first fixture.");
+        }
         String [][] list =db.viewAllSchedules();
         TableLayout ll = (TableLayout) findViewById(R.id.scheduleMatchTableView);
         TableRow firstRow= new TableRow(this);

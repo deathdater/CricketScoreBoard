@@ -2,90 +2,129 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/activity_schedule_matches"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:background="@color/Color_Background"
+    android:fillViewport="true"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin"
     tools:context="com.example.android.cricketscoreboard.views.ScheduleMatches">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/rectangle"
         android:orientation="vertical"
-        android:background="@drawable/rectangle">
+        android:padding="@dimen/space_lg">
+
         <TextView
             android:id="@+id/scheduleMatch_text_view"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-
-            android:layout_centerHorizontal="true"
-            android:fontFamily="monospace"
             android:text="Schedule Planner"
-            android:textAlignment="center"
-            android:textSize="36sp" />
-        <DatePicker
+            android:textAppearance="@style/TextAppearance.Cricket.ScreenTitle" />
+
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Select fixture date, competing teams, and innings length."
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="13sp" />
+
+        <DatePicker
             android:id="@+id/matchDatePicker"
-            android:layoutMode="opticalBounds"
-            style="@android:style/Widget.DatePicker"
-            android:minDate="01/28/2017" />
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:calendarViewShown="false"
+            android:datePickerMode="spinner" />
 
         <TableLayout
             android:id="@+id/teamSelect_table_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@id/matchDatePicker">
+            android:layout_marginTop="@dimen/space_md"
+            android:background="@drawable/bg_stat_chip"
+            android:stretchColumns="1">
 
-            <TableRow>
+            <TableRow
+                android:gravity="center_vertical"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp">
+
                 <TextView
-                    android:layout_weight="1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingEnd="16dp"
+                    android:paddingRight="16dp"
                     android:text="Team A"
-                    android:fontFamily="monospace"
-                    android:textSize="20dp"/>
+                    android:textAppearance="@style/TextAppearance.Cricket.FieldLabel" />
+
                 <Spinner
                     android:id="@+id/teamA_spinner"
-                    android:layout_weight="1"/>
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp" />
             </TableRow>
+
             <TableRow
-                android:layout_marginTop="20dp">
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp">
+
                 <TextView
-                    android:layout_weight="1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingEnd="16dp"
+                    android:paddingRight="16dp"
                     android:text="Team B"
-                    android:fontFamily="monospace"
-                    android:textSize="20dp"/>
+                    android:textAppearance="@style/TextAppearance.Cricket.FieldLabel" />
+
                 <Spinner
                     android:id="@+id/teamB_spinner"
-                    android:layout_weight="1"/>
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp" />
             </TableRow>
+
             <TableRow
-                android:layout_marginTop="20dp">
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp">
+
                 <TextView
-                    android:layout_weight="2"
-                    android:text="Inning Overs"
-                    android:fontFamily="monospace"
-                    android:textSize="20dp"/>
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingEnd="16dp"
+                    android:paddingRight="16dp"
+                    android:text="Innings Overs"
+                    android:textAppearance="@style/TextAppearance.Cricket.FieldLabel" />
 
                 <EditText
                     android:id="@+id/matchOverEditText"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:hint="20"
+                    android:inputType="number"
                     android:maxLength="2"
-                    android:inputType="number" />
-
+                    android:minHeight="48dp"
+                    android:text="20"
+                    android:textSize="16sp" />
             </TableRow>
-
-
         </TableLayout>
-    <Button
-        android:layout_height="wrap_content"
-        android:layout_width="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:text="Save Schedule"
-        android:onClick="onSaveScheduleClick"/>
-    </LinearLayout>
 
+        <Button
+            style="@style/Widget.Cricket.PrimaryButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xl"
+            android:onClick="onSaveScheduleClick"
+            android:text="Save Schedule" />
+
+    </LinearLayout>
 </ScrollView>

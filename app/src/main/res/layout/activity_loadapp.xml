@@ -1,46 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/Color_Background"
+    android:clickable="true"
+    android:focusable="true"
     android:onClick="mainScreen"
+    android:padding="@dimen/space_xl"
     tools:context="com.example.android.cricketscoreboard.views.LoadAppActivity">
 
-    <!-- The primary full-screen view. This can be replaced with whatever view
-         is needed to present your content, e.g. VideoView, SurfaceView,
-         TextureView, etc. -->
-    <RelativeLayout
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        >
-    <TextView
-        android:id="@+id/fullscreenTag_text_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center"
-        android:layout_centerHorizontal="true"
-        android:keepScreenOn="false"
-        android:text="@string/load_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:background="@drawable/rectangle"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="@dimen/space_xl">
 
-        android:textColor='@color/Color_Heading'
-        android:textSize="@dimen/dimen_MainHeading"
-        android:fontFamily="@string/string_App_font"
-        android:textStyle="bold" />
+        <ImageView
+            android:layout_width="112dp"
+            android:layout_height="112dp"
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/as_1409_512" />
+
+        <TextView
+            android:id="@+id/fullscreenTag_text_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_lg"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"
+            android:text="@string/load_content"
+            android:textColor="@color/colorTextPrimary"
+            android:textSize="@dimen/dimen_MainHeading"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:gravity="center"
+            android:text="Manage teams, players, fixtures, and ball-by-ball live scoring"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="15sp" />
+
+        <Button
+            style="@style/Widget.Cricket.PrimaryButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xl"
+            android:onClick="mainScreen"
+            android:text="Enter Match Center" />
+    </LinearLayout>
+
     <TextView
         android:id="@+id/fullscreenTapHint_text_view"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="@dimen/space_md"
+        android:gravity="center"
         android:keepScreenOn="true"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentRight="true"
-        android:text="Tap on the screen to continue.."
-        android:textColor="@color/Color_Heading"
-        android:textSize="15sp"
-        android:fontFamily="@string/string_App_font"
-        android:textStyle="bold" />
-    <!-- This FrameLayout insets its children based on system windows using
-         android:fitsSystemWindows. -->
-    </RelativeLayout>
+        android:text="Tap anywhere to continue.."
+        android:textColor="@color/colorTextSecondary"
+        android:textSize="14sp" />
+
 </FrameLayout>

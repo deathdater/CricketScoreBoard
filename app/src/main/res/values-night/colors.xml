@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Core Brand Palette (Dark — Night Stadium) -->
+    <color name="colorPrimary">#2E7D32</color>
+    <color name="colorPrimaryDark">#123C16</color>
+    <color name="colorPrimaryVariant">#66BB6A</color>
+    <color name="colorOnPrimary">#FFFFFF</color>
+    <color name="colorPrimaryContainer">#1E3A20</color>
+    <color name="colorOnPrimaryContainer">#C8E6C9</color>
+
+    <color name="colorAccent">#EF5350</color>
+    <color name="colorSecondary">#EF5350</color>
+    <color name="colorSecondaryVariant">#E53935</color>
+    <color name="colorOnSecondary">#181D18</color>
+
+    <!-- Accent Palette Options (Dark) -->
+    <color name="accent_turf_primary">#2E7D32</color>
+    <color name="accent_turf_dark">#123C16</color>
+    <color name="accent_turf_secondary">#EF5350</color>
+
+    <color name="accent_stadium_primary">#1565C0</color>
+    <color name="accent_stadium_dark">#0A2E5C</color>
+    <color name="accent_stadium_secondary">#4DB6AC</color>
+
+    <color name="accent_pavilion_primary">#6D4C41</color>
+    <color name="accent_pavilion_dark">#3E2723</color>
+    <color name="accent_pavilion_secondary">#FFB74D</color>
+
+    <!-- Surfaces, Backgrounds & Borders -->
+    <color name="colorSurface">#1B211B</color>
+    <color name="colorSurfaceElevated">#242C24</color>
+    <color name="colorSurfaceHeader">#1E3A20</color>
+    <color name="colorOnSurfaceHeader">#E8F5E9</color>
+    <color name="colorOutline">#364236</color>
+    <color name="colorDivider">#2A332A</color>
+
+    <!-- Text Hierarchy -->
+    <color name="colorTextPrimary">#E6ECE5</color>
+    <color name="colorTextSecondary">#B5C2B4</color>
+    <color name="colorTextMuted">#8A9789</color>
+
+    <!-- Semantic Status Colors -->
+    <color name="colorSuccess">#66BB6A</color>
+    <color name="colorWarning">#FFA726</color>
+    <color name="colorDanger">#EF5350</color>
+
+    <!-- Legacy Color Names Preserved & Remapped for Dark Mode -->
+    <color name="black_overlay">#E6ECE5</color>
+    <color name="Color_Heading">#E6ECE5</color>
+    <color name="Color_ButtonText">#FFFFFF</color>
+    <color name="Color_Background">#111511</color>
+    <color name="Color_buttonBackPush">#2E7D32</color>
+    <color name="Color_buttonBackPusha">#1976D2</color>
+    <color name="Color_buttonBackPush1">#0288D1</color>
+    <color name="Color_buttonBackPush1a">#00796B</color>
+    <color name="Color_buttonBackPush2">#546E7A</color>
+    <color name="Color_buttonBackPush2a">#388E3C</color>
+    <color name="Color_buttonBackPush3">#C62828</color>
+</resources>

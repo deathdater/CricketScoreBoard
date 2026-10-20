@@ -1,7 +1,24 @@
 <resources>
+    <!-- App Load Page -->
+    <dimen name="dimen_MainHeading">36sp</dimen>
 
-    <!-- App Load Page-->
-    <dimen name="dimen_MainHeading">50sp</dimen>
+    <!-- Standardized Spacing Scale -->
+    <dimen name="space_xs">4dp</dimen>
+    <dimen name="space_sm">8dp</dimen>
+    <dimen name="space_md">12dp</dimen>
+    <dimen name="space_lg">16dp</dimen>
+    <dimen name="space_xl">24dp</dimen>
+    <dimen name="space_xxl">32dp</dimen>
+
+    <!-- Card & Component Tokens -->
+    <dimen name="card_corner_radius">14dp</dimen>
+    <dimen name="card_elevation">2dp</dimen>
+    <dimen name="card_padding">16dp</dimen>
+    <dimen name="button_corner_radius">10dp</dimen>
+    <dimen name="min_touch_target">48dp</dimen>
+    <dimen name="avatar_size_md">72dp</dimen>
+    <dimen name="avatar_size_lg">88dp</dimen>
+
     <!-- Default screen margins, per the Android Design guidelines. -->
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
@@ -9,6 +26,6 @@
     <dimen name="fab_margin">16dp</dimen>
     <dimen name="text_margin">16dp</dimen>
     <dimen name="appbar_padding_top">8dp</dimen>
-    <dimen name="nav_header_vertical_spacing">16dp</dimen>
-    <dimen name="nav_header_height">160dp</dimen>
+    <dimen name="nav_header_vertical_spacing">12dp</dimen>
+    <dimen name="nav_header_height">168dp</dimen>
 </resources>

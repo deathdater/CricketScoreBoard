@@ -150,7 +150,7 @@ try {
                checkBatsmen=1;
         } else{
            viewRadioGrp = findViewById(R.id.batsmenStyle_radioGrp);
-           viewRadioGrp.setVisibility(View.INVISIBLE);
+           viewRadioGrp.setVisibility(View.GONE);
                checkBatsmen=0;
         }
 
@@ -165,7 +165,7 @@ try {
             checkBowler=1;
         } else{
             viewRadioGrp = findViewById(R.id.bowlerStyle_radioGrp);
-            viewRadioGrp.setVisibility(View.INVISIBLE);
+            viewRadioGrp.setVisibility(View.GONE);
             checkBowler=0;
         }
 

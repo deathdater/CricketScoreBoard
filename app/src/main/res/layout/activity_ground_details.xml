@@ -2,124 +2,130 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/activity_ground_details"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:background="@color/Color_Background"
+    android:fillViewport="true"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin"
     tools:context="com.example.android.cricketscoreboard.views.GroundDetailsActivity">
 
-<RelativeLayout
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:background="@drawable/rectangle">
-
-    <TextView
-        android:id="@+id/groundDetails_text_view"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:fontFamily="monospace"
-        android:text="New Ground Details"
-        android:textAlignment="center"
-        android:textSize="32sp" />
-    <TextView
-        android:id="@+id/groundName_text_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/groundDetails_text_view"
-        android:fontFamily="monospace"
-        android:paddingBottom="5dp"
-        android:layout_marginTop="20dp"
-        android:text="Ground Name"
-        android:textSize="16sp"
-        />
-    <EditText
-        android:id="@+id/groundName_edit_text"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/groundName_text_view"
-        android:inputType="textPersonName"
-        android:lines="1"
-        android:textAllCaps="false"
-        android:textStyle="bold"
-        android:typeface="monospace"
-        android:hapticFeedbackEnabled="true"
-        android:width="40dp" />
-    <TextView
-        android:id="@+id/City_text_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/groundName_edit_text"
-        android:fontFamily="monospace"
-        android:paddingBottom="5dp"
-        android:layout_marginTop="20dp"
+        android:background="@drawable/rectangle"
+        android:orientation="vertical"
+        android:padding="@dimen/space_lg">
 
-        android:text="City"
-        android:textSize="16sp"
-        />
+        <TextView
+            android:id="@+id/groundDetails_text_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="New Ground Details"
+            android:textAppearance="@style/TextAppearance.Cricket.ScreenTitle" />
 
-    <Spinner
-        android:id="@+id/city_spinner"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/City_text_view"
-        android:entries="@array/city_array"
-        android:prompt="@string/city_prompt" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Register a stadium or local cricket ground."
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="13sp" />
 
-    <TextView
-        android:id="@+id/location_text_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/city_spinner"
-        android:fontFamily="monospace"
-        android:paddingBottom="5dp"
-        android:layout_marginTop="20dp"
-
-        android:text="Location"
-        android:textSize="16sp"
-        />
-    <TextView
-        android:id="@+id/latitude_text_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/location_text_view"
-        android:fontFamily="monospace"
-        android:paddingBottom="5dp"
-        android:layout_marginTop="20dp"
-        android:text="Latitude:"
-        android:textSize="16sp"
-        />
-    <TextView
-        android:id="@+id/longitude_text_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/latitude_text_view"
-        android:fontFamily="monospace"
-        android:paddingBottom="5dp"
-        android:layout_marginTop="20dp"
-        android:text="Longitude:"
-        android:textSize="16sp"
-        />
-        <Button
+        <TextView
+            android:id="@+id/groundName_text_view"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Use Map"
-            android:fontFamily="monospace"
-            android:layout_marginLeft="100dp"
-            android:layout_below="@id/city_spinner"
-            android:layout_toRightOf="@id/location_text_view"/>
+            android:layout_marginTop="@dimen/space_lg"
+            android:text="Ground Name"
+            android:textAppearance="@style/TextAppearance.Cricket.FieldLabel" />
 
-    <Button
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_below="@id/longitude_text_view"
-    android:layout_centerHorizontal="true"
-    android:text="Save"/>
+        <EditText
+            android:id="@+id/groundName_edit_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:hapticFeedbackEnabled="true"
+            android:hint="e.g., Eden Gardens"
+            android:inputType="textPersonName|textCapWords"
+            android:lines="1"
+            android:minHeight="48dp"
+            android:textAllCaps="false"
+            android:textSize="16sp" />
 
+        <TextView
+            android:id="@+id/City_text_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:text="City"
+            android:textAppearance="@style/TextAppearance.Cricket.FieldLabel" />
 
-</RelativeLayout>
+        <Spinner
+            android:id="@+id/city_spinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:entries="@array/city_array"
+            android:minHeight="48dp"
+            android:prompt="@string/city_prompt" />
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_lg"
+            android:background="@drawable/bg_stat_chip"
+            android:orientation="vertical"
+            android:padding="@dimen/space_md">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/location_text_view"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Ground Coordinates"
+                    android:textAppearance="@style/TextAppearance.Cricket.SectionTitle" />
+
+                <Button
+                    style="@style/Widget.Cricket.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Use Map" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/latitude_text_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Latitude: —"
+                android:textColor="@color/colorTextSecondary"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/longitude_text_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Longitude: —"
+                android:textColor="@color/colorTextSecondary"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <Button
+            style="@style/Widget.Cricket.PrimaryButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xl"
+            android:text="Save Ground" />
+
+    </LinearLayout>
 </ScrollView>

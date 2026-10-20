@@ -22,6 +22,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.example.android.cricketscoreboard.R;
+import com.example.android.cricketscoreboard.UiSettingsDialog;
 
 public class ScorerTabActivity extends AppCompatActivity {
 
@@ -84,6 +85,7 @@ public class ScorerTabActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            UiSettingsDialog.show(this);
             return true;
         }
 

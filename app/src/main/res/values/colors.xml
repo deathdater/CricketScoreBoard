@@ -1,21 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#8bc34a</color>
-    <color name="colorPrimaryDark">#5a9216</color>
-    <color name="colorAccent">#E64A19</color>
-    <color name="black_overlay">#66000000</color>
+    <!-- Core Brand Palette (Light — Turf Green & Cricket Crimson) -->
+    <color name="colorPrimary">#1B5E20</color>
+    <color name="colorPrimaryDark">#0D3B10</color>
+    <color name="colorPrimaryVariant">#2E7D32</color>
+    <color name="colorOnPrimary">#FFFFFF</color>
+    <color name="colorPrimaryContainer">#D7F5D3</color>
+    <color name="colorOnPrimaryContainer">#08290B</color>
 
-    #5D4037
-    26C6DA
-    <!-- App Load Page-->
-    <color name="Color_Heading">#4E342E</color>
-    <color name="Color_ButtonText">#FFEB3B</color>
-    <color name="Color_Background">#F4FFF3</color>
-    <color name="Color_buttonBackPush">#7E57C2</color>
-    <color name="Color_buttonBackPusha">#5C6BC0</color>
-    <color name="Color_buttonBackPush1">#42A5F5</color>
-    <color name="Color_buttonBackPush1a">#29B6F6</color>
-    <color name="Color_buttonBackPush2">#26C6DA</color>
-    <color name="Color_buttonBackPush2a">#26A69A</color>
-    <color name="Color_buttonBackPush3">#8D6E63</color>
+    <color name="colorAccent">#C62828</color>
+    <color name="colorSecondary">#C62828</color>
+    <color name="colorSecondaryVariant">#8E0000</color>
+    <color name="colorOnSecondary">#FFFFFF</color>
+
+    <!-- Accent Palette Options (used by ThemeOverlays) -->
+    <color name="accent_turf_primary">#1B5E20</color>
+    <color name="accent_turf_dark">#0D3B10</color>
+    <color name="accent_turf_secondary">#C62828</color>
+
+    <color name="accent_stadium_primary">#0D47A1</color>
+    <color name="accent_stadium_dark">#002171</color>
+    <color name="accent_stadium_secondary">#00897B</color>
+
+    <color name="accent_pavilion_primary">#5D4037</color>
+    <color name="accent_pavilion_dark">#321911</color>
+    <color name="accent_pavilion_secondary">#E65100</color>
+
+    <!-- Surfaces, Backgrounds & Borders -->
+    <color name="colorSurface">#FFFFFF</color>
+    <color name="colorSurfaceElevated">#F1F6F0</color>
+    <color name="colorSurfaceHeader">#1B5E20</color>
+    <color name="colorOnSurfaceHeader">#FFFFFF</color>
+    <color name="colorOutline">#C5D1C3</color>
+    <color name="colorDivider">#E1E8DF</color>
+
+    <!-- Text Hierarchy -->
+    <color name="colorTextPrimary">#181D18</color>
+    <color name="colorTextSecondary">#444F44</color>
+    <color name="colorTextMuted">#6B766B</color>
+
+    <!-- Semantic Status Colors -->
+    <color name="colorSuccess">#2E7D32</color>
+    <color name="colorWarning">#EF6C00</color>
+    <color name="colorDanger">#C62828</color>
+
+    <!-- Legacy Color Names Preserved & Remapped to Cohesive Palette -->
+    <color name="black_overlay">#181D18</color>
+    <color name="Color_Heading">#181D18</color>
+    <color name="Color_ButtonText">#FFFFFF</color>
+    <color name="Color_Background">#F5F8F4</color>
+    <color name="Color_buttonBackPush">#2E7D32</color>
+    <color name="Color_buttonBackPusha">#1565C0</color>
+    <color name="Color_buttonBackPush1">#0277BD</color>
+    <color name="Color_buttonBackPush1a">#00695C</color>
+    <color name="Color_buttonBackPush2">#455A64</color>
+    <color name="Color_buttonBackPush2a">#1B5E20</color>
+    <color name="Color_buttonBackPush3">#B71C1C</color>
 </resources>

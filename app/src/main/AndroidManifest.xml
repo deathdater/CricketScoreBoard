@@ -27,34 +27,46 @@
             android:label="@string/app_name" />
         <activity
             android:name=".views.TeamDetails"
-            android:label="@string/app_name" />
+            android:label="@string/app_name"
+            android:parentActivityName=".views.LandingPageActivity" />
         <activity
             android:name=".views.PlayerDetailsActivity"
-            android:label="@string/app_name" />
+            android:label="@string/app_name"
+            android:parentActivityName=".views.LandingPageActivity" />
         <activity
             android:name=".views.GroundDetailsActivity"
-            android:label="@string/app_name" />
-        <activity android:name=".views.ScheduleMatches" />
+            android:label="@string/app_name"
+            android:parentActivityName=".views.LandingPageActivity" />
+        <activity
+            android:name=".views.ScheduleMatches"
+            android:label="@string/app_name"
+            android:parentActivityName=".views.LandingPageActivity" />
         <activity
             android:name=".views.ViewTeams"
-            android:label="@string/app_name" />
+            android:label="@string/app_name"
+            android:parentActivityName=".views.LandingPageActivity" />
         <activity
             android:name=".views.ViewGrounds"
-            android:label="@string/app_name" />
+            android:label="@string/app_name"
+            android:parentActivityName=".views.LandingPageActivity" />
         <activity
             android:name=".views.ViewPlayers"
-            android:label="@string/app_name" />
+            android:label="@string/app_name"
+            android:parentActivityName=".views.LandingPageActivity" />
         <activity
             android:name=".views.ViewSchedules"
-            android:label="@string/app_name" />
+            android:label="@string/app_name"
+            android:parentActivityName=".views.LandingPageActivity" />
         <activity
             android:name=".views.ScorerTabActivity"
             android:label="@string/app_name"
+            android:parentActivityName=".views.LandingPageActivity"
             android:screenOrientation="landscape"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".views.ScorerPadActivity"
             android:label="@string/app_name"
+            android:parentActivityName=".views.LandingPageActivity"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme.NoActionBar" />
     </application>

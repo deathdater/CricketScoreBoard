@@ -127,7 +127,8 @@ public class ViewPlayers extends AppCompatActivity {
             //     list.add(values[i]);
             // }
             final StableArrayAdapter adapter = new StableArrayAdapter(this,
-                    android.R.layout.preference_category, val);
+                    android.R.layout.simple_spinner_item, val);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         playerListSpinner.setAdapter(adapter);
 
         playerListSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener()

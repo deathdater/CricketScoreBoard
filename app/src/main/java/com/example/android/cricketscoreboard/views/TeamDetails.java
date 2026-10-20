@@ -75,7 +75,10 @@ public class TeamDetails extends AppCompatActivity {
         playerCount.setMaxValue(16);
         numberOfPlayers = playerCount.getValue();
         newTeamview = findViewById(R.id.teamName_edit_text);
-        imageView=(ImageView)findViewById(R.id.team_logo);
+        imageView = (ImageView) findViewById(R.id.team_logo_img);
+        if (imageView == null) {
+            imageView = (ImageView) findViewById(R.id.team_logo);
+        }
         teamName = newTeamview.toString();
         dbHelper = new DatabaseHandler(this);
 

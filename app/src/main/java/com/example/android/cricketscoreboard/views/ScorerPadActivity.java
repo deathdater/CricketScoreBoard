@@ -1,6 +1,8 @@
 package com.example.android.cricketscoreboard.views;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.view.HapticFeedbackConstants;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
@@ -27,6 +29,8 @@ import android.widget.TextView;
 
 import com.example.android.cricketscoreboard.R;
 import com.example.android.cricketscoreboard.ScoreMan;
+import com.example.android.cricketscoreboard.UiPreferences;
+import com.example.android.cricketscoreboard.UiSettingsDialog;
 
 import java.util.ArrayList;
 
@@ -110,30 +114,30 @@ public class ScorerPadActivity extends AppCompatActivity
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            UiSettingsDialog.show(this);
             return true;
         }
 
         return super.onOptionsItemSelected(item);
     }
 
-    @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
         if (id == R.id.nav_camera) {
-            // Handle the camera action
+            startActivity(new Intent(this, ScorerTabActivity.class));
         } else if (id == R.id.nav_gallery) {
-
+            startActivity(new Intent(this, TeamDetails.class));
         } else if (id == R.id.nav_slideshow) {
-
+            startActivity(new Intent(this, PlayerDetailsActivity.class));
         } else if (id == R.id.nav_manage) {
-
+            UiSettingsDialog.show(this);
         } else if (id == R.id.nav_share) {
-
+            startActivity(new Intent(this, ScheduleMatches.class));
         } else if (id == R.id.nav_send) {
-
+            finish();
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -142,6 +146,9 @@ public class ScorerPadActivity extends AppCompatActivity
     }
 
 public void onBallPress(View view) {
+    if (view != null && UiPreferences.get(this).isScorerHapticsEnabled()) {
+        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+    }
 
 //Initialising all the parameter
     undoBall = (CheckBox) findViewById(R.id.undo_checkBox);

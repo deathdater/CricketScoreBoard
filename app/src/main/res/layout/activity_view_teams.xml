@@ -1,179 +1,223 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/activity_view_teams"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/rectangle"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
-    android:isScrollContainer="true"
+    android:background="@color/Color_Background"
+    android:fillViewport="true"
     tools:context="com.example.android.cricketscoreboard.views.ViewTeams">
 
+    <RelativeLayout
+        android:id="@+id/activity_view_teams"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="@dimen/activity_horizontal_margin"
+        android:paddingTop="@dimen/activity_vertical_margin"
+        android:paddingRight="@dimen/activity_horizontal_margin"
+        android:paddingBottom="@dimen/activity_vertical_margin">
 
-
+        <!-- Team Selector Card -->
         <LinearLayout
             android:id="@+id/teamSelectLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
             android:background="@drawable/rectangle"
-            >
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
             <Spinner
                 android:id="@+id/teamNameSpinner"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="5"
-                >
-
-            </Spinner>
-
-            <Button
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Save" />
+                android:minHeight="48dp" />
 
+            <Button
+                style="@style/Widget.Cricket.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginLeft="8dp"
+                android:text="Save" />
         </LinearLayout>
 
+        <!-- Team Header Card -->
         <LinearLayout
             android:id="@+id/teamDetailsLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:background="@drawable/rectangle"
-            android:layout_below="@id/teamSelectLayout">
+            android:layout_below="@id/teamSelectLayout"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_scoreboard_header"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
             <ImageView
                 android:id="@+id/team_logo"
-                android:layout_width="150px"
-                android:layout_height="150px"
-                android:background="@drawable/cricket"/>
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:contentDescription="Team emblem"
+                android:src="@drawable/conference_2" />
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
                 android:id="@+id/teamNameText"
-                android:text="Team Name \nDisplayed Here!!"
-                android:textAlignment="center"
-                android:textSize="25sp"
-                android:textStyle="bold"
-                android:layout_weight="1"/>
-
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginLeft="16dp"
+                android:layout_weight="1"
+                android:text="Team Name"
+                android:textColor="@color/colorOnSurfaceHeader"
+                android:textSize="22sp"
+                android:textStyle="bold" />
         </LinearLayout>
 
-    <TableLayout
-        android:id="@+id/team_details_Table"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/rectangle"
-        android:layout_below="@id/teamDetailsLayout"
-        android:stretchColumns="5">
-        <TableRow>
+        <!-- Team Record Summary Table -->
+        <TableLayout
+            android:id="@+id/team_details_Table"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/teamDetailsLayout"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/rectangle"
+            android:stretchColumns="0,1,2,3,4">
+
+            <TableRow android:paddingBottom="6dp">
+                <TextView
+                    android:gravity="center"
+                    android:text="Played"
+                    android:textAppearance="@style/TextAppearance.Cricket.StatLabel" />
+
+                <TextView
+                    android:gravity="center"
+                    android:text="Won"
+                    android:textAppearance="@style/TextAppearance.Cricket.StatLabel" />
+
+                <TextView
+                    android:gravity="center"
+                    android:text="Lost"
+                    android:textAppearance="@style/TextAppearance.Cricket.StatLabel" />
+
+                <TextView
+                    android:gravity="center"
+                    android:text="Drawn"
+                    android:textAppearance="@style/TextAppearance.Cricket.StatLabel" />
+
+                <TextView
+                    android:gravity="center"
+                    android:text="Captain"
+                    android:textAppearance="@style/TextAppearance.Cricket.StatLabel" />
+            </TableRow>
+
+            <TableRow android:gravity="center_vertical">
+                <TextView
+                    android:id="@+id/teamMatchPlayedValue"
+                    android:gravity="center"
+                    android:text="0"
+                    android:textAppearance="@style/TextAppearance.Cricket.StatValue" />
+
+                <TextView
+                    android:id="@+id/teamMatchWonValue"
+                    android:gravity="center"
+                    android:text="0"
+                    android:textAppearance="@style/TextAppearance.Cricket.StatValue"
+                    android:textColor="@color/colorSuccess" />
+
+                <TextView
+                    android:id="@+id/teamMatchLostValue"
+                    android:gravity="center"
+                    android:text="0"
+                    android:textAppearance="@style/TextAppearance.Cricket.StatValue"
+                    android:textColor="@color/colorDanger" />
+
+                <TextView
+                    android:id="@+id/teamMatchDrawnValue"
+                    android:gravity="center"
+                    android:text="0"
+                    android:textAppearance="@style/TextAppearance.Cricket.StatValue" />
+
+                <Spinner
+                    android:id="@+id/teamCaptainValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:minHeight="48dp"
+                    android:spinnerMode="dialog" />
+            </TableRow>
+        </TableLayout>
+
+        <!-- Squad Roster Assignment Card -->
+        <RelativeLayout
+            android:id="@+id/playerAddRemoveLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/team_details_Table"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/rectangle">
+
             <TextView
-                android:text=" Match\n Played"/>
-            <TextView
-                android:paddingLeft="15dp"
-                android:layout_gravity="center_horizontal"
-                android:text=" Match\n WON"/>
-            <TextView
-                android:paddingLeft="15dp"
-                android:layout_gravity="center_horizontal"
-                android:text=" Match\n LOST"/>
-            <TextView
-                android:paddingLeft="15dp"
-                android:layout_gravity="center_horizontal"
-                android:text=" Match\n Drawn"/>
-            <TextView
-                android:paddingLeft="15dp"
-                android:layout_gravity="center_horizontal"
-                android:text=" Team\n Captain"
-                />
-        </TableRow>
-        <TableRow>
-            <TextView
-                android:id="@+id/teamMatchPlayedValue"
-                android:layout_gravity="center_horizontal"
-                android:text="0"/>
-            <TextView
-                android:paddingLeft="15dp"
-                android:layout_gravity="center_horizontal"
-                android:id="@+id/teamMatchWonValue"
-                android:text="0"/>
-            <TextView
-                android:paddingLeft="15dp"
-                android:id="@+id/teamMatchLostValue"
-                android:layout_gravity="center_horizontal"
-                android:text="0"/>
-            <TextView
-                android:id="@+id/teamMatchDrawnValue"
-                android:layout_gravity="center_horizontal"
-                android:text="0"/>
+                android:id="@+id/squadManageHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="Squad Roster Management"
+                android:textAppearance="@style/TextAppearance.Cricket.SectionTitle" />
 
             <Spinner
-                android:paddingLeft="15dp"
-                android:layout_gravity="right"
-                android:id="@+id/teamCaptainValue"
-                android:layout_width="wrap_content"
+                android:id="@+id/addPlayer_spinner"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_below="@id/squadManageHeader"
+                android:layout_marginEnd="8dp"
+                android:layout_marginRight="8dp"
+                android:layout_toStartOf="@+id/addPlayer_btn"
+                android:layout_toLeftOf="@+id/addPlayer_btn"
+                android:minHeight="48dp" />
 
-                android:spinnerMode="dialog">
+            <Button
+                android:id="@+id/addPlayer_btn"
+                style="@style/Widget.Cricket.PrimaryButton"
+                android:layout_width="148dp"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/squadManageHeader"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:onClick="addPlayerButtonClick"
+                android:text="Add Player" />
 
-            </Spinner>
-        </TableRow>
+            <Spinner
+                android:id="@+id/removePlayer_spinner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/addPlayer_btn"
+                android:layout_marginTop="12dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginRight="8dp"
+                android:layout_toStartOf="@+id/removePlayer_btn"
+                android:layout_toLeftOf="@+id/removePlayer_btn"
+                android:minHeight="48dp" />
 
-    </TableLayout>
-    <RelativeLayout
-        android:id="@+id/playerAddRemoveLayout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/rectangle"
-        android:layout_below="@id/team_details_Table">
-        <Spinner
-            android:id="@+id/addPlayer_spinner"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
-        </Spinner>
+            <Button
+                android:id="@+id/removePlayer_btn"
+                style="@style/Widget.Cricket.OutlinedButton"
+                android:layout_width="148dp"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/addPlayer_btn"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:layout_marginTop="12dp"
+                android:onClick="removePlayerButtonClick"
+                android:text="Remove Player" />
+        </RelativeLayout>
 
-        <Button
-            android:id="@+id/addPlayer_btn"
-            android:layout_width="wrap_content"
+        <ListView
+            android:id="@+id/teams_list"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
-            android:onClick="addPlayerButtonClick"
-            android:text="Add Player" />
-
-        <Spinner
-            android:id="@+id/removePlayer_spinner"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/addPlayer_btn">
-
-        </Spinner>
-
-        <Button
-            android:id="@+id/removePlayer_btn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
-            android:layout_below="@id/addPlayer_btn"
-            android:onClick="removePlayerButtonClick"
-            android:text="Remove Player" />
-
-
+            android:layout_below="@id/playerAddRemoveLayout"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/rectangle"
+            android:visibility="gone" />
 
     </RelativeLayout>
-    <ListView
-        android:id="@+id/teams_list"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@drawable/rectangle"
-        android:layout_below="@id/playerAddRemoveLayout">
-    </ListView>
-
-</RelativeLayout>
-
+</ScrollView>

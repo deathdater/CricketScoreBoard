@@ -44,7 +44,8 @@ public class ScheduleMatches extends AppCompatActivity{
 
             if(valTeam.size()>0) {
                 final StableArrayAdapter teamListAdapter = new StableArrayAdapter(this,
-                        android.R.layout.preference_category, valTeam);
+                        android.R.layout.simple_spinner_item, valTeam);
+                teamListAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 teamListA.setAdapter(teamListAdapter);
                 teamListB.setAdapter(teamListAdapter);
             }else{
