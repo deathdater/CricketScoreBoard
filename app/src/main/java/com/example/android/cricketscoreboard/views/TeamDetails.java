@@ -10,8 +10,11 @@ import android.net.Uri;
 import android.os.Environment;
 import android.os.Handler;
 import android.provider.MediaStore;
-import android.support.design.widget.Snackbar;
-import android.support.v7.app.AppCompatActivity;
+import com.google.android.material.snackbar.Snackbar;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.PickVisualMediaRequest;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
 import android.util.Log;
@@ -51,6 +54,17 @@ public class TeamDetails extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     DatabaseHandler dbHelper;
 
+    // Photo Picker launcher (replaces startActivityForResult + storage permissions).
+    private final ActivityResultLauncher<PickVisualMediaRequest> pickLogo =
+            registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), uri -> {
+                if (uri != null) {
+                    imageUri = uri;
+                    imageView.setImageURI(imageUri);
+                } else {
+                    Toast.makeText(this, "No image selected", Toast.LENGTH_SHORT).show();
+                }
+            });
+
     //public int teamId;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +77,7 @@ public class TeamDetails extends AppCompatActivity {
         newTeamview = findViewById(R.id.teamName_edit_text);
         imageView=(ImageView)findViewById(R.id.team_logo);
         teamName = newTeamview.toString();
+        dbHelper = new DatabaseHandler(this);
 
     }
 
@@ -144,48 +159,9 @@ public class TeamDetails extends AppCompatActivity {
 
 
     public void openImageChooser(){
-        Intent gallery=new Intent(Intent.ACTION_GET_CONTENT, MediaStore.Images.Media.INTERNAL_CONTENT_URI);
-        gallery.setAction(Intent.ACTION_GET_CONTENT);
-     //   startActivityForResult(gallery,PICK_IMAGE);
-        startActivityForResult(Intent.createChooser(gallery, "Select Picture"), PICK_IMAGE_REQUEST);
-/*
-        Intent intent = new Intent();
-        intent.setType("image/*");
-        intent.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(Intent.createChooser(intent, "Select Picture"), SELECT_PICTURE);
-*/
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode,int resultCode,Intent data){
-        super.onActivityResult(requestCode,resultCode,data);
-
-        if(resultCode==RESULT_OK && requestCode==PICK_IMAGE_REQUEST )//&& data != null && data.getData() != null)
-        {
-
-            imageUri=data.getData();
-            Toast.makeText(this,"uri taken "+imageUri, Toast.LENGTH_SHORT).show();
-            imageView.setImageURI(imageUri);
-            try {
-                Toast.makeText(this,"try", Toast.LENGTH_SHORT).show();
-
-                Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
-                // Log.d(TAG, String.valueOf(bitmap));
-
-                ImageView imageView = (ImageView) findViewById(R.id.team_logo);
-                imageView.setImageBitmap(bitmap);
-            } catch (IOException e) {
-                Toast.makeText(this,"catch", Toast.LENGTH_SHORT).show();
-                e.printStackTrace();
-            }
-
-        } else{
-            Toast.makeText(this,"Some Error Loading image", Toast.LENGTH_SHORT).show();
-        }
-
-
-
-
+        pickLogo.launch(new PickVisualMediaRequest.Builder()
+                .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
+                .build());
     }
     /*
   @Override

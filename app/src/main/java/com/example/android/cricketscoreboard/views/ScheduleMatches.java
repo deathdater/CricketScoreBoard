@@ -2,7 +2,7 @@ package com.example.android.cricketscoreboard.views;
 
 import android.database.sqlite.SQLiteDatabase;
 import android.icu.util.Calendar;
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -32,7 +32,7 @@ public class ScheduleMatches extends AppCompatActivity{
 
         try{
             DatabaseHandler db=new DatabaseHandler(this);
-            List valTeam=new ArrayList();
+            List<String> valTeam=new ArrayList<>();
             if(db.getAllTeamNames().size()>0) {
 
                 for (int i = 0; i < db.getAllTeamNames().size(); i++) {
@@ -65,8 +65,13 @@ public class ScheduleMatches extends AppCompatActivity{
         Spinner teamListB=(Spinner)findViewById(R.id.teamB_spinner) ;
         DatePicker matchDate=(DatePicker)findViewById(R.id.matchDatePicker);
         EditText matchOvers=(EditText)findViewById(R.id.matchOverEditText);
-        String matchDateString=""+matchDate.getYear()+"/"+matchDate.getMonth()+"/"+matchDate.getDayOfMonth();
+        String matchDateString=""+matchDate.getYear()+"/"+(matchDate.getMonth()+1)+"/"+matchDate.getDayOfMonth();
 
+
+        if (teamListA.getSelectedItem() == null || teamListB.getSelectedItem() == null) {
+            Toast.makeText(ScheduleMatches.this, "Add teams before scheduling a match", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         if(teamListA.getSelectedItem().toString().equals(teamListB.getSelectedItem().toString())){
     Toast.makeText(ScheduleMatches.this, "Teams Cannot be same", Toast.LENGTH_SHORT).show();

@@ -15,7 +15,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.media.Image;
 import android.net.Uri;
-import android.support.design.widget.Snackbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
@@ -35,7 +34,8 @@ import com.example.android.cricketscoreboard.entity.Users;
 
 public class DatabaseHandler extends SQLiteOpenHelper {
     public String USERID="aditya.juet@gmail.com";
-    private static final int DATABASE_VERSION = 1;
+    // v2: fixed MATCH_DETAILS schema (missing USER_EMAIL_ID column type).
+    private static final int DATABASE_VERSION = 2;
     //Declaring Database Name
     private SQLiteDatabase db;
     private static final String DATABASE_NAME = "cricketScore_DB";
@@ -53,7 +53,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     private static final String COLUMN_RULE_STATUS = "RULE_STATUS";
 
     //Rules
-    String CREATE_TABLE_RULES_DETAILS = "CREATE TABLE " + TABLE_RULES_DETAILS + "("
+    String CREATE_TABLE_RULES_DETAILS = "CREATE TABLE IF NOT EXISTS " + TABLE_RULES_DETAILS + "("
 
             + COLUMN_RULE_ID + " INTEGER,"
             + COLUMN_RULE_DESCRIPTION + " TEXT,"
@@ -86,8 +86,8 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
 
     //Match Details
-    public String CREATE_TABLE_MATCH_DETAILS = "CREATE TABLE " + TABLE_MATCH_DETAILS + "("
-            + COLUMN_MATCH_USER_ID
+    public String CREATE_TABLE_MATCH_DETAILS = "CREATE TABLE IF NOT EXISTS " + TABLE_MATCH_DETAILS + "("
+            + COLUMN_MATCH_USER_ID + " TEXT,"
             + COLUMN_MATCH_ID + " INTEGER,"
             + COLUMN_MATCH_PLAYER_ID + " INTEGER,"
             + COLUMN_MATCH_PLAYER_TOTAL_RUNS + " INTEGER,"
@@ -118,7 +118,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     public static final String USERID_UNIQUE = "CONSTRAINT_USER_EMAIL_ID";
 
     //User Details
-    public String CREATE_TABLE_USER_DETAILS = "CREATE TABLE " + TABLE_USER_DETAILS + "("
+    public String CREATE_TABLE_USER_DETAILS = "CREATE TABLE IF NOT EXISTS " + TABLE_USER_DETAILS + "("
             + COLUMN_USER_ID + " TEXT,"
             + COLUMN_USER_PASSWORD + " TEXT,"
             + COLUMN_USER_DOB + " TEXT,"
@@ -154,7 +154,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     private static final String COLUMN_PLAYER_TEAM_ID = "PLAYER_TEAM_ID";
 
     //Player Details
-    public String CREATE_TABLE_PLAYER_DETAILS = "CREATE TABLE " + TABLE_PLAYER_DETAILS + "("
+    public String CREATE_TABLE_PLAYER_DETAILS = "CREATE TABLE IF NOT EXISTS " + TABLE_PLAYER_DETAILS + "("
             + COLUMN_PLAYER_USER_ID + " TEXT,"
             + COLUMN_PLAYER_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
             + COLUMN_PLAYER_NAME + " TEXT,"
@@ -197,7 +197,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
 
     //Team Details
-    public String CREATE_TABLE_TEAM_DETAILS = "CREATE TABLE " + TABLE_TEAM_DETAILS + "("
+    public String CREATE_TABLE_TEAM_DETAILS = "CREATE TABLE IF NOT EXISTS " + TABLE_TEAM_DETAILS + "("
             + COLUMN_TEAM_USER_ID + " TEXT,"
             + COLUMN_TEAM_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
             + COLUMN_TEAM_NAME + " TEXT,"
@@ -235,7 +235,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
     //Schedules
 
-    public String CREATE_TABLE_SCHEDULE_DETAILS = "CREATE TABLE " + TABLE_SCHEDULE_DETAILS + "("
+    public String CREATE_TABLE_SCHEDULE_DETAILS = "CREATE TABLE IF NOT EXISTS " + TABLE_SCHEDULE_DETAILS + "("
             + COLUMN_SCHEDULE_USER_ID + " TEXT,"
             + COLUMN_SCHEDULE_MATCH_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
             + COLUMN_SCHEDULE_MATCH_DATE + " TEXT,"
@@ -270,7 +270,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
 
     //Ground Details
-    public String CREATE_TABLE_GROUND_DETAILS = "CREATE TABLE " + TABLE_GROUND_DETAILS + "("
+    public String CREATE_TABLE_GROUND_DETAILS = "CREATE TABLE IF NOT EXISTS " + TABLE_GROUND_DETAILS + "("
             + COLUMN_GROUND_USER_ID + " TEXT,"
             + COLUMN_GROUND_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
             + COLUMN_GROUND_NAME + " TEXT,"
@@ -313,10 +313,12 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     // Upgrading database
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // Drop older table if existed
-        //   db.execSQL("DROP TABLE IF EXISTS " + TABLE_TEAM_DETAILS);
-
-        // Create tables again
+        if (oldVersion < 2) {
+            // MATCH_DETAILS was created with a malformed first column in v1 and never written to,
+            // so it is safe to recreate. All other tables (teams, players, schedules) are kept.
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_MATCH_DETAILS);
+        }
+        // Create any missing tables (CREATE TABLE IF NOT EXISTS keeps existing data).
         onCreate(db);
     }
 
@@ -386,9 +388,8 @@ public class DatabaseHandler extends SQLiteOpenHelper {
      * Team Management using TEAM ID
      */
     public Byte getTeamImage(int teamId) {
-        //code to retrieve Teamlogo from DB.
-        Byte image = new Byte("äaaaa");
-        return image;
+        //code to retrieve Teamlogo from DB. (Not implemented; previously threw NumberFormatException.)
+        return null;
     }
 
     public String getTeamName(int teamId) {
@@ -396,9 +397,11 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         String selectQuery = "SELECT " + COLUMN_TEAM_NAME + " FROM " + TABLE_TEAM_DETAILS + " WHERE " + COLUMN_TEAM_ID + "=" +teamId;
         SQLiteDatabase db=this.getReadableDatabase();
 
-        Cursor cursor=db.rawQuery(selectQuery,null);
-        cursor.moveToFirst();
-       teamName=cursor.getString(cursor.getColumnIndex(COLUMN_TEAM_NAME));
+        try (Cursor cursor = db.rawQuery(selectQuery, null)) {
+            if (cursor.moveToFirst()) {
+                teamName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TEAM_NAME));
+            }
+        }
         return teamName;
     }
 
@@ -423,17 +426,13 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
     //
     public byte[] viewImage(String teamName) {
-        String loadImageQuery = "select TEAM_LOGO from TEAM_DETAILS where TeamName = " + teamName;
-        Cursor c = db.rawQuery(loadImageQuery, null);
-        if (c.moveToNext()) {
-            byte[] image = c.getBlob(0);
-            //   Bitmap bmp= BitmapFactory.decodeByteArray(image, 0 , image.length);
-            //   imageView.setImageBitmap(bmp);
-
-            // Toast.makeText(this,"Done", Toast.LENGTH_SHORT).show();
-            return image;
+        SQLiteDatabase db = this.getReadableDatabase();
+        try (Cursor c = db.query(TABLE_TEAM_DETAILS, new String[]{COLUMN_TEAM_LOGO},
+                COLUMN_TEAM_NAME + " = ?", new String[]{teamName}, null, null, null)) {
+            if (c.moveToFirst() && c.getType(0) == Cursor.FIELD_TYPE_BLOB) {
+                return c.getBlob(0);
+            }
         }
-        c.close();
         return null;
     }
 
@@ -452,9 +451,9 @@ public class DatabaseHandler extends SQLiteOpenHelper {
             Cursor cursor = db.rawQuery(selectQuery, null);//selectQuery,selectedArguments
             if (cursor.moveToLast()) {
                 do {
-                    teamlist.add(cursor.getString(cursor.getColumnIndex(COLUMN_TEAM_NAME)));
+                    teamlist.add(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TEAM_NAME)));
                     //team.teamId=cursor.getInt(1);
-                   /* list.add(cursor.getInt(cursor.getColumnIndex(COLUMN_TEAM_ID))+"\t\t\t"+*///teamlist.add(team);
+                   /* list.add(cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TEAM_ID))+"\t\t\t"+*///teamlist.add(team);
                     //  list.add(cursor.getString(1));//adding 2nd column data
                 } while (cursor.moveToPrevious());
             }
@@ -550,27 +549,27 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
             Cursor cursor = db.query(TABLE_TEAM_DETAILS, columns, WHERE, WHEREARGS, null, null, null, null);
             cursor.moveToFirst();
-            Log.v("getTeamDetails", "cursor Value" + cursor.getString(cursor.getColumnIndex(COLUMN_TEAM_NAME)));
-            team.teamId = cursor.getInt(cursor.getColumnIndex(COLUMN_TEAM_ID));
-            Log.v("getTeamDetails", "COLUMN_TEAM_ID Value" + cursor.getString(cursor.getColumnIndex(COLUMN_TEAM_ID)));
+            Log.v("getTeamDetails", "cursor Value" + cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TEAM_NAME)));
+            team.teamId = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TEAM_ID));
+            Log.v("getTeamDetails", "COLUMN_TEAM_ID Value" + cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TEAM_ID)));
 
-            team.teamName = cursor.getString(cursor.getColumnIndex(COLUMN_TEAM_NAME));
-            Log.v("getTeamDetails", "COLUMN_TEAM_NAME Value" + cursor.getString(cursor.getColumnIndex(COLUMN_TEAM_NAME)));
+            team.teamName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TEAM_NAME));
+            Log.v("getTeamDetails", "COLUMN_TEAM_NAME Value" + cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TEAM_NAME)));
 
-            //   teams.teamLogo=cursor.getBlob(cursor.getColumnIndex(COLUMN_TEAM_LOGO));
-            team.matchDraw = cursor.getInt(cursor.getColumnIndex(COLUMN_TEAM_MATCHES_DRAW));
-            Log.v("getTeamDetails", "COLUMN_TEAM_MATCHES_DRAW Value" + cursor.getString(cursor.getColumnIndex(COLUMN_TEAM_MATCHES_DRAW)));
+            //   teams.teamLogo=cursor.getBlob(cursor.getColumnIndexOrThrow(COLUMN_TEAM_LOGO));
+            team.matchDraw = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TEAM_MATCHES_DRAW));
+            Log.v("getTeamDetails", "COLUMN_TEAM_MATCHES_DRAW Value" + cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TEAM_MATCHES_DRAW)));
 
-            team.matchWon = cursor.getInt(cursor.getColumnIndex(COLUMN_TEAM_MATCHES_WON));
-            Log.v("getTeamDetails", "COLUMN_TEAM_MATCHES_WON Value" + cursor.getString(cursor.getColumnIndex(COLUMN_TEAM_MATCHES_WON)));
+            team.matchWon = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TEAM_MATCHES_WON));
+            Log.v("getTeamDetails", "COLUMN_TEAM_MATCHES_WON Value" + cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TEAM_MATCHES_WON)));
 
-            team.matchLost = cursor.getInt(cursor.getColumnIndex(COLUMN_TEAM_MATCHES_LOST));
-            Log.v("getTeamDetails", "COLUMN_TEAM_MATCHES_LOST Value" + cursor.getString(cursor.getColumnIndex(COLUMN_TEAM_MATCHES_LOST)));
+            team.matchLost = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TEAM_MATCHES_LOST));
+            Log.v("getTeamDetails", "COLUMN_TEAM_MATCHES_LOST Value" + cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TEAM_MATCHES_LOST)));
 
-            team.captainId = cursor.getInt(cursor.getColumnIndex(COLUMN_TEAM_CAPTAIN_ID));
-            Log.v("getTeamDetails", "COLUMN_TEAM_CAPTAIN_ID Value" + cursor.getString(cursor.getColumnIndex(COLUMN_TEAM_CAPTAIN_ID)));
+            team.captainId = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TEAM_CAPTAIN_ID));
+            Log.v("getTeamDetails", "COLUMN_TEAM_CAPTAIN_ID Value" + cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TEAM_CAPTAIN_ID)));
 
-            //   team.teamPlayerCount= cursor.getInt(cursor.getColumnIndex(COLUMN_TEAM_NUMBER_OF_PLAYERS));
+            //   team.teamPlayerCount= cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TEAM_NUMBER_OF_PLAYERS));
 
             Log.v("getTeamDetails", "Retrieved Team details for Team id:" + teamId);
             cursor.close();
@@ -597,12 +596,12 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
             Cursor cursor = db.rawQuery(selectQuery, null);//selectQuery,selectedArguments
             if (cursor.moveToFirst()) {
-                Log.v("LetMeSee", "Hello " + cursor.getInt(cursor.getColumnIndex(COLUMN_TEAM_ID)));
+                Log.v("LetMeSee", "Hello " + cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TEAM_ID)));
                 // if (cursor.) {
                 //  do {
-                teamId = cursor.getInt(cursor.getColumnIndex(COLUMN_TEAM_ID));
+                teamId = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TEAM_ID));
                 //team.teamId=cursor.getInt(1);
-                   /* list.add(cursor.getInt(cursor.getColumnIndex(COLUMN_TEAM_ID))+"\t\t\t"+*///teamlist.add(team);
+                   /* list.add(cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TEAM_ID))+"\t\t\t"+*///teamlist.add(team);
                 //  list.add(cursor.getString(1));//adding 2nd column data
                 //  } while (cursor.moveToPrevious());
                 //   }
@@ -669,49 +668,49 @@ public class DatabaseHandler extends SQLiteOpenHelper {
             cursor.moveToFirst();
             //cursor.moveToLast();
 
-            player.playerName=cursor.getString(cursor.getColumnIndex(COLUMN_PLAYER_NAME));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_NAME Value: " + cursor.getString(cursor.getColumnIndex(COLUMN_PLAYER_NAME)));
-            player.playerID=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_ID));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_ID Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_ID)));
-            player.playerEmail=cursor.getString(cursor.getColumnIndex(COLUMN_PLAYER_EMAIL));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_EMAIL Value: " + cursor.getString(cursor.getColumnIndex(COLUMN_PLAYER_EMAIL)));
-            player.playerBatsmen=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_BATSMAN));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_BATSMAN Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_BATSMAN)));
-            player.playerBowler=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_BOWLER));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_BOWLER Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_BOWLER)));
-            player.playerWK=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_WICKETKEEPER));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_WICKETKEEPER Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_WICKETKEEPER)));
-          //  player.playerImage=cursor.getBlob(cursor.getColumnIndex(COLUMN_PLAYER_IMAGE));
-            player.playerDOB=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_DOB));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_DOB Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_DOB)));
-            player.playerTeamId=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_TEAM_ID));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_TEAM_ID Value: " +cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_TEAM_ID)));
-            player.playerTotalRuns=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_TOTAL_RUNS));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_TOTAL_RUNS Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_TOTAL_RUNS)));
-            player.playerFifty=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_FIFTY));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_FIFTY Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_FIFTY)));
-            player.playerHundred=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_HUNDRED));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_HUNDRED Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_HUNDRED)));
-            player.playerBallFaced=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_BALLS_FACED));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_BALLS_FACED Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_BALLS_FACED)));
-            player.playerTwoHundred=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_TWO_HUNDRED));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_TWO_HUNDRED Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_TWO_HUNDRED)));
-            player.playerMatchPlayed=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_MATCH_PLAYED));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_MATCH_PLAYED Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_MATCH_PLAYED)));
-            player.playerOverBowled=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_OVERS_BOWLED));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_OVERS_BOWLED Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_OVERS_BOWLED)));
-            player.playerWicketTaken=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_WICKETS_TAKEN));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_WICKETS_TAKEN Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_WICKETS_TAKEN)));
-            player.playerMaidenBowled=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_MAIDEN_BOWLED));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_MAIDEN_BOWLED Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_MAIDEN_BOWLED)));
-            player.playerWidesCount=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_WIDES_COUNT));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_WIDES_COUNT Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_WIDES_COUNT)));
-            player.playerNoBallCount=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_NOBALL_COUNT));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_NOBALL_COUNT Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_NOBALL_COUNT)));
-            player.playerRunsGiven=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_RUNS_GIVEN));
-            Log.v("getPlayerDetails", "COLUMN_PLAYER_RUNS_GIVEN Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_RUNS_GIVEN)));
-            player.playerCatches=cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYERS_CATCHES));
-            Log.v("getPlayerDetails", "COLUMN_PLAYERS_CATCHES Value: " + cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYERS_CATCHES)));
+            player.playerName=cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_NAME));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_NAME Value: " + cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_NAME)));
+            player.playerID=cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_ID));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_ID Value: " + cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_ID)));
+            player.playerEmail=cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_EMAIL));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_EMAIL Value: " + cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_EMAIL)));
+            player.playerBatsmen=cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_BATSMAN));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_BATSMAN Value: " + cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_BATSMAN)));
+            player.playerBowler=cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_BOWLER));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_BOWLER Value: " + cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_BOWLER)));
+            player.playerWK=cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_WICKETKEEPER));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_WICKETKEEPER Value: " + cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_WICKETKEEPER)));
+          //  player.playerImage=cursor.getBlob(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_IMAGE));
+            player.playerDOB=cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_DOB));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_DOB Value: " + cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_DOB)));
+            player.playerTeamId=cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_TEAM_ID));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_TEAM_ID Value: " +cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_TEAM_ID)));
+            player.playerTotalRuns=cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_TOTAL_RUNS));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_TOTAL_RUNS Value: " + cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_TOTAL_RUNS)));
+            player.playerFifty=cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_FIFTY));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_FIFTY Value: " + cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_FIFTY)));
+            player.playerHundred=cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_HUNDRED));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_HUNDRED Value: " + cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_HUNDRED)));
+            player.playerBallFaced=cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_BALLS_FACED));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_BALLS_FACED Value: " + cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_BALLS_FACED)));
+            player.playerTwoHundred=cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_TWO_HUNDRED));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_TWO_HUNDRED Value: " + cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_TWO_HUNDRED)));
+            player.playerMatchPlayed=cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_MATCH_PLAYED));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_MATCH_PLAYED Value: " + cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_MATCH_PLAYED)));
+            player.playerOverBowled=cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_OVERS_BOWLED));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_OVERS_BOWLED Value: " + cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_OVERS_BOWLED)));
+            player.playerWicketTaken=cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_WICKETS_TAKEN));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_WICKETS_TAKEN Value: " + cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_WICKETS_TAKEN)));
+            player.playerMaidenBowled=cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_MAIDEN_BOWLED));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_MAIDEN_BOWLED Value: " + cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_MAIDEN_BOWLED)));
+            player.playerWidesCount=cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_WIDES_COUNT));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_WIDES_COUNT Value: " + cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_WIDES_COUNT)));
+            player.playerNoBallCount=cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_NOBALL_COUNT));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_NOBALL_COUNT Value: " + cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_NOBALL_COUNT)));
+            player.playerRunsGiven=cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_RUNS_GIVEN));
+            Log.v("getPlayerDetails", "COLUMN_PLAYER_RUNS_GIVEN Value: " + cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_RUNS_GIVEN)));
+            player.playerCatches=cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYERS_CATCHES));
+            Log.v("getPlayerDetails", "COLUMN_PLAYERS_CATCHES Value: " + cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYERS_CATCHES)));
 
 
             Log.v("getPlayerDetails", "Retrieved Player details for Player id: " + playerId);
@@ -742,8 +741,8 @@ public class DatabaseHandler extends SQLiteOpenHelper {
            if (cursor.moveToFirst()) {
                 //    do {
 
-                   /* list.add(cursor.getInt(cursor.getColumnIndex(COLUMN_TEAM_ID))+"\t\t\t"+*///list.add(cursor.getString(cursor.getColumnIndex(COLUMN_PLAYER_ID)));
-                playerId = cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYER_ID));//adding COLUMN_PLAYER_ID column data
+                   /* list.add(cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TEAM_ID))+"\t\t\t"+*///list.add(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_ID)));
+                playerId = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_ID));//adding COLUMN_PLAYER_ID column data
                 //  } while (cursor.moveToPrevious());
 
                 // closing connection
@@ -781,7 +780,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
             if (cursor.moveToLast()) {
                 do {
 
-                   /* list.add(cursor.getInt(cursor.getColumnIndex(COLUMN_TEAM_ID))+"\t\t\t"+*///list.add(cursor.getString(cursor.getColumnIndex(COLUMN_PLAYER_ID)));
+                   /* list.add(cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TEAM_ID))+"\t\t\t"+*///list.add(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_ID)));
                     list.add(cursor.getString(1));//adding 2nd column data
                 } while (cursor.moveToPrevious());
             }
@@ -853,7 +852,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
             if (cursor.moveToLast()) {  //cursor!=null&&
                 do {
 
-                   /* list.add(cursor.getInt(cursor.getColumnIndex(COLUMN_TEAM_ID))+"\t\t\t"+*///list.add(cursor.getString(cursor.getColumnIndex(COLUMN_PLAYER_ID)));
+                   /* list.add(cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TEAM_ID))+"\t\t\t"+*///list.add(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_ID)));
                     list.add(cursor.getString(1));//adding 2nd column data
                 } while (cursor.moveToPrevious());
             }
@@ -945,7 +944,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
                     for (int j = 0; j < numberOfColumns; j++) {
 
-                   /* list.add(cursor.getInt(cursor.getColumnIndex(COLUMN_TEAM_ID))+"\t\t\t"+*///list.add(cursor.getString(cursor.getColumnIndex(COLUMN_PLAYER_ID)));
+                   /* list.add(cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_TEAM_ID))+"\t\t\t"+*///list.add(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_PLAYER_ID)));
                         list[i][j] = cursor.getString(j);//adding 2nd column data
 
                     }

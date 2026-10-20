@@ -14,8 +14,8 @@ public class ScoreMan {
   public   boolean wide, noball, freeHit,byes, legbyes, out, undoBall;
   public   String bowlerName, thisOver, strikerName, nonStrikerName,scoreCommentry=":";
 
-    public ArrayList score=new ArrayList();
-    public ArrayList overs=new ArrayList();
+    public ArrayList<Integer> score=new ArrayList<>();
+    public ArrayList<String> overs=new ArrayList<>();
 
     public void goBowler(String bowlerName) {
 
@@ -41,7 +41,7 @@ public class ScoreMan {
             if(score.isEmpty()){
                 battingScore=0;
             }else{
-                battingScore=(Integer)score.get((index-1));
+                battingScore=score.get((index-1));
             }
 
         }else{
@@ -96,8 +96,8 @@ public class ScoreMan {
                      }
                      }
 
-                 else if(noball=true){
-                     if(freeHit=true) {
+                 else if(noball){
+                     if(freeHit) {
 
                          if(byes==true||legbyes==true){
                              if(byes==true){

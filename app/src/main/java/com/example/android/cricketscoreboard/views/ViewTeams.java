@@ -1,7 +1,7 @@
 package com.example.android.cricketscoreboard.views;
 
 import android.content.Context;
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -22,9 +22,9 @@ import java.util.List;
 
 public class ViewTeams extends AppCompatActivity {
     Bundle customsavedIntanceState;
-    List valTeam=new ArrayList();
-    List valAddPlayer=new ArrayList();
-    List valRemovePlayer=new ArrayList();
+    List<String> valTeam=new ArrayList<>();
+    List<String> valAddPlayer=new ArrayList<>();
+    List<String> valRemovePlayer=new ArrayList<>();
     Spinner teamList;
     Spinner addPlayer_spinner;
     Spinner removePlayer_spinner;
@@ -45,9 +45,9 @@ public class ViewTeams extends AppCompatActivity {
         try{
         DatabaseHandler db=new DatabaseHandler(this);
         /*
-        List valTeam=new ArrayList();
-        List valAddPlayer=new ArrayList();
-        List valRemovePlayer=new ArrayList();
+        List<String> valTeam=new ArrayList<>();
+        List<String> valAddPlayer=new ArrayList<>();
+        List<String> valRemovePlayer=new ArrayList<>();
         */
 
             Log.v("View Teams","Checking if the teams exist in DB");

@@ -1,30 +1,14 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
-
-buildscript {
-    repositories {
-        jcenter()
-        google()
-        maven {
-            url 'https://maven.google.com/'
-            name 'Google'
-        }
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:3.0.1'
-
-
-        // NOTE: Do not place your application dependencies here; they belong
-        // in the individual module build.gradle files
-    }
+plugins {
+    alias(libs.plugins.android.application) apply false
 }
 
-allprojects {
-    repositories {
-        jcenter()
-        google()
+// When the project lives on a non-APFS external volume (e.g. exFAT), macOS writes
+// AppleDouble "._*" files next to build outputs, which breaks AGP resource parsing.
+// Redirect build outputs to the local disk in that case.
+if (rootDir.absolutePath.startsWith("/Volumes/")) {
+    def localBuildRoot = new File(System.getProperty("user.home"), ".gradle-builds/${rootProject.name}")
+    allprojects { p ->
+        p.layout.buildDirectory.set(new File(localBuildRoot, p == p.rootProject ? "root" : p.name))
     }
-}
-
-task clean(type: Delete) {
-    delete rootProject.buildDir
 }
