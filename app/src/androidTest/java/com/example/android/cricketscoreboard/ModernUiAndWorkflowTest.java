@@ -13,10 +13,15 @@ import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import com.example.android.cricketscoreboard.scoring.CricketAnalyticsCalculator;
+import com.example.android.cricketscoreboard.scoring.CricketRulesProfile;
+import com.example.android.cricketscoreboard.scoring.DeliveryEvent;
+import com.example.android.cricketscoreboard.scoring.MatchState;
 import com.example.android.cricketscoreboard.views.LandingPageActivity;
 import com.example.android.cricketscoreboard.views.PlayerDetailsActivity;
 import com.example.android.cricketscoreboard.views.ScheduleMatches;
 import com.example.android.cricketscoreboard.views.ScorerPadActivity;
+import com.example.android.cricketscoreboard.views.ScorerTabActivity;
 import com.example.android.cricketscoreboard.views.TeamDetails;
 import com.example.android.cricketscoreboard.views.ViewPlayers;
 import com.example.android.cricketscoreboard.views.ViewSchedules;
@@ -201,6 +206,50 @@ public class ModernUiAndWorkflowTest {
                 activity.onBallPress(ballBtn);
                 assertEquals("4", scoreText.getText().toString());
                 assertEquals("1", ballsText.getText().toString());
+
+                // Verify SQLite v4 persisted the match session and delivery event log
+                DatabaseHandler db = new DatabaseHandler(context);
+                MatchState reloaded = db.loadMatchState(activity.getActiveMatchState().matchUuid);
+                assertNotNull(reloaded);
+                assertEquals(4, reloaded.getCurrentInnings().totalRuns);
+                assertEquals(1, reloaded.getCurrentInnings().totalLegalBalls);
+            });
+        }
+    }
+
+    @Test
+    public void configurableRulesPersistenceAndFourTabMatchCenterWorkEndToEnd() {
+        DatabaseHandler db = new DatabaseHandler(context);
+        assertTrue(db.getAllRulesProfiles().size() >= 7);
+
+        CricketRulesProfile hundred = CricketRulesProfile.createTheHundred();
+        MatchState match = new MatchState(
+                "match-sqlite-v4-" + System.currentTimeMillis(),
+                hundred, 1, "Invincibles", 2, "Superchargers",
+                MatchState.MatchLifecycleStatus.PROVISIONAL);
+        db.saveMatchSessionHeader(match, 0);
+
+        match = db.recordMatchDelivery(match, new DeliveryEvent.Builder()
+                .setMatchUuid(match.matchUuid)
+                .setInningsNumber(1)
+                .setSequenceNumber(1)
+                .setStriker(1, "Buttler")
+                .setNonStriker(2, "Salt")
+                .setBowler(101, "Rashid")
+                .setRunsOffBat(6)
+                .build());
+
+        MatchState reloaded = db.loadMatchState(match.matchUuid);
+        assertNotNull(reloaded);
+        assertEquals(5, reloaded.rulesProfile.ballsPerOver);
+        assertEquals(6, reloaded.getCurrentInnings().totalRuns);
+        assertTrue(CricketAnalyticsCalculator.buildShareableScorecardText(reloaded).contains("Invincibles"));
+
+        try (ActivityScenario<ScorerTabActivity> scenario =
+                     ActivityScenario.launch(ScorerTabActivity.class)) {
+            scenario.onActivity(activity -> {
+                assertNotNull(activity.getOrLoadMatchState());
+                assertNotNull(activity.findViewById(R.id.tabs));
             });
         }
     }

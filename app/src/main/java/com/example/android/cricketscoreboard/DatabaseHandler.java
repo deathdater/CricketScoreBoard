@@ -26,6 +26,14 @@ import com.example.android.cricketscoreboard.entity.Rules;
 import com.example.android.cricketscoreboard.entity.Schedules;
 import com.example.android.cricketscoreboard.entity.Teams;
 import com.example.android.cricketscoreboard.entity.Users;
+import com.example.android.cricketscoreboard.scoring.CricketRulesProfile;
+import com.example.android.cricketscoreboard.scoring.CricketScoringEngine;
+import com.example.android.cricketscoreboard.scoring.DeliveryEvent;
+import com.example.android.cricketscoreboard.scoring.MatchState;
+import com.example.android.cricketscoreboard.scoring.MatchState.BatterInningsStat;
+import com.example.android.cricketscoreboard.scoring.MatchState.BowlerSpellStat;
+import com.example.android.cricketscoreboard.scoring.MatchState.InningsScorecard;
+import com.example.android.cricketscoreboard.scoring.MatchState.MatchLifecycleStatus;
 import com.example.android.cricketscoreboard.sync.CricketSyncWorker;
 import com.example.android.cricketscoreboard.sync.SyncPreferences;
 import com.example.android.cricketscoreboard.sync.SyncRecordModels;
@@ -47,7 +55,8 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     public String USERID="aditya.juet@gmail.com";
     // v2: fixed MATCH_DETAILS schema (missing USER_EMAIL_ID column type).
     // v3: added offline-first cloud sync metadata columns + SYNC_OUTBOX table.
-    private static final int DATABASE_VERSION = 3;
+    // v4: added configurable RULES_PROFILES, MATCH_SESSIONS, and event-sourced MATCH_DELIVERY_EVENTS.
+    private static final int DATABASE_VERSION = 4;
     //Declaring Database Name
     private SQLiteDatabase db;
     private final Context appContext;
@@ -84,6 +93,69 @@ public class DatabaseHandler extends SQLiteOpenHelper {
             + COLUMN_OUTBOX_RETRY_COUNT + " INTEGER DEFAULT 0,"
             + COLUMN_OUTBOX_LAST_ERROR + " TEXT,"
             + " UNIQUE(" + COLUMN_OUTBOX_ENTITY_TYPE + ", " + COLUMN_OUTBOX_ENTITY_UUID + "));";
+
+    // v4: Configurable Rules Profiles Table
+    public static final String TABLE_RULES_PROFILES = "RULES_PROFILES";
+    public static final String COLUMN_PROFILE_ID = "PROFILE_ID";
+    public static final String COLUMN_PROFILE_NAME = "PROFILE_NAME";
+    public static final String COLUMN_PROFILE_VERSION = "PROFILE_VERSION";
+    public static final String COLUMN_PROFILE_PAYLOAD = "RULES_PAYLOAD";
+
+    public static final String CREATE_TABLE_RULES_PROFILES = "CREATE TABLE IF NOT EXISTS " + TABLE_RULES_PROFILES + "("
+            + COLUMN_PROFILE_ID + " TEXT PRIMARY KEY,"
+            + COLUMN_PROFILE_NAME + " TEXT NOT NULL,"
+            + COLUMN_PROFILE_VERSION + " INTEGER DEFAULT 1,"
+            + COLUMN_PROFILE_PAYLOAD + " TEXT NOT NULL,"
+            + COLUMN_CLUB_ID + " TEXT,"
+            + COLUMN_UPDATED_AT + " INTEGER DEFAULT 0,"
+            + COLUMN_IS_DELETED + " INTEGER DEFAULT 0);";
+
+    // v4: Event-Sourced Match Sessions Table
+    public static final String TABLE_MATCH_SESSIONS = "MATCH_SESSIONS";
+    public static final String COLUMN_SESSION_MATCH_UUID = "MATCH_UUID";
+    public static final String COLUMN_SESSION_SCHEDULE_ID = "SCHEDULE_ID";
+    public static final String COLUMN_SESSION_TEAM_A_ID = "TEAM_A_ID";
+    public static final String COLUMN_SESSION_TEAM_A_NAME = "TEAM_A_NAME";
+    public static final String COLUMN_SESSION_TEAM_B_ID = "TEAM_B_ID";
+    public static final String COLUMN_SESSION_TEAM_B_NAME = "TEAM_B_NAME";
+    public static final String COLUMN_SESSION_RULES_SNAPSHOT = "RULES_SNAPSHOT";
+    public static final String COLUMN_SESSION_LIFECYCLE_STATUS = "LIFECYCLE_STATUS";
+    public static final String COLUMN_SESSION_CURRENT_INNINGS = "CURRENT_INNINGS";
+    public static final String COLUMN_SESSION_RESULT_TEXT = "RESULT_TEXT";
+
+    public static final String CREATE_TABLE_MATCH_SESSIONS = "CREATE TABLE IF NOT EXISTS " + TABLE_MATCH_SESSIONS + "("
+            + COLUMN_SESSION_MATCH_UUID + " TEXT PRIMARY KEY,"
+            + COLUMN_SESSION_SCHEDULE_ID + " INTEGER DEFAULT 0,"
+            + COLUMN_SESSION_TEAM_A_ID + " INTEGER DEFAULT 1,"
+            + COLUMN_SESSION_TEAM_A_NAME + " TEXT,"
+            + COLUMN_SESSION_TEAM_B_ID + " INTEGER DEFAULT 2,"
+            + COLUMN_SESSION_TEAM_B_NAME + " TEXT,"
+            + COLUMN_SESSION_RULES_SNAPSHOT + " TEXT NOT NULL,"
+            + COLUMN_SESSION_LIFECYCLE_STATUS + " TEXT DEFAULT 'PROVISIONAL',"
+            + COLUMN_SESSION_CURRENT_INNINGS + " INTEGER DEFAULT 1,"
+            + COLUMN_SESSION_RESULT_TEXT + " TEXT,"
+            + COLUMN_CLUB_ID + " TEXT,"
+            + COLUMN_UPDATED_AT + " INTEGER DEFAULT 0,"
+            + COLUMN_IS_DELETED + " INTEGER DEFAULT 0,"
+            + COLUMN_SYNC_STATUS + " TEXT DEFAULT 'DIRTY');";
+
+    // v4: Ordered Delivery Events Table
+    public static final String TABLE_MATCH_DELIVERY_EVENTS = "MATCH_DELIVERY_EVENTS";
+    public static final String COLUMN_EVENT_UUID = "EVENT_UUID";
+    public static final String COLUMN_EVENT_MATCH_UUID = "MATCH_UUID";
+    public static final String COLUMN_EVENT_INNINGS = "INNINGS_NUMBER";
+    public static final String COLUMN_EVENT_SEQ = "SEQ_NUMBER";
+    public static final String COLUMN_EVENT_PAYLOAD = "EVENT_PAYLOAD";
+    public static final String COLUMN_EVENT_IS_UNDONE = "IS_UNDONE";
+
+    public static final String CREATE_TABLE_MATCH_DELIVERY_EVENTS = "CREATE TABLE IF NOT EXISTS " + TABLE_MATCH_DELIVERY_EVENTS + "("
+            + COLUMN_EVENT_UUID + " TEXT PRIMARY KEY,"
+            + COLUMN_EVENT_MATCH_UUID + " TEXT NOT NULL,"
+            + COLUMN_EVENT_INNINGS + " INTEGER NOT NULL,"
+            + COLUMN_EVENT_SEQ + " INTEGER NOT NULL,"
+            + COLUMN_EVENT_PAYLOAD + " TEXT NOT NULL,"
+            + COLUMN_UPDATED_AT + " INTEGER NOT NULL,"
+            + COLUMN_EVENT_IS_UNDONE + " INTEGER DEFAULT 0);";
 
     //Declaring all Tables
 
@@ -339,7 +411,10 @@ public class DatabaseHandler extends SQLiteOpenHelper {
                 CREATE_TABLE_MATCH_DETAILS,
                 CREATE_TABLE_RULES_DETAILS,
                 CREATE_TABLE_GROUND_DETAILS,
-                CREATE_TABLE_SYNC_OUTBOX};
+                CREATE_TABLE_SYNC_OUTBOX,
+                CREATE_TABLE_RULES_PROFILES,
+                CREATE_TABLE_MATCH_SESSIONS,
+                CREATE_TABLE_MATCH_DELIVERY_EVENTS};
 
         for (String sql : createStatements) {
             db.execSQL(sql);
@@ -388,6 +463,9 @@ public class DatabaseHandler extends SQLiteOpenHelper {
      */
     private void ensureSyncSchemaAndBackfill(SQLiteDatabase db) {
         db.execSQL(CREATE_TABLE_SYNC_OUTBOX);
+        db.execSQL(CREATE_TABLE_RULES_PROFILES);
+        db.execSQL(CREATE_TABLE_MATCH_SESSIONS);
+        db.execSQL(CREATE_TABLE_MATCH_DELIVERY_EVENTS);
         ensureTableSyncColumns(db, TABLE_TEAM_DETAILS, COLUMN_TEAM_ID);
         ensureTableSyncColumns(db, TABLE_PLAYER_DETAILS, COLUMN_PLAYER_ID);
         ensureTableSyncColumns(db, TABLE_SCHEDULE_DETAILS, COLUMN_SCHEDULE_MATCH_ID);
@@ -1983,6 +2061,9 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         try {
             db.delete(TABLE_SYNC_OUTBOX, null, null);
+            db.delete(TABLE_MATCH_DELIVERY_EVENTS, null, null);
+            db.delete(TABLE_MATCH_SESSIONS, null, null);
+            db.delete(TABLE_RULES_PROFILES, null, null);
             db.delete(TABLE_SCHEDULE_DETAILS, null, null);
             db.delete(TABLE_PLAYER_DETAILS, null, null);
             db.delete(TABLE_TEAM_DETAILS, null, null);
@@ -1990,6 +2071,323 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         } finally {
             db.close();
         }
+    }
+
+    // =========================================================================
+    // v4 Configurable Rules Profiles & Event-Sourced Match Session Persistence
+    // =========================================================================
+
+    /**
+     * Saves or updates a versioned {@link CricketRulesProfile} in {@code RULES_PROFILES}.
+     */
+    public void saveRulesProfile(CricketRulesProfile profile) {
+        if (profile == null) {
+            return;
+        }
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            ContentValues cv = new ContentValues();
+            cv.put(COLUMN_PROFILE_ID, profile.profileId);
+            cv.put(COLUMN_PROFILE_NAME, profile.profileName);
+            cv.put(COLUMN_PROFILE_VERSION, profile.version);
+            cv.put(COLUMN_PROFILE_PAYLOAD, profile.serialize());
+            cv.put(COLUMN_CLUB_ID, getActiveClubId());
+            cv.put(COLUMN_UPDATED_AT, System.currentTimeMillis());
+            cv.put(COLUMN_IS_DELETED, 0);
+            db.insertWithOnConflict(TABLE_RULES_PROFILES, null, cv, SQLiteDatabase.CONFLICT_REPLACE);
+        } finally {
+            db.close();
+        }
+    }
+
+    /**
+     * Returns all active {@link CricketRulesProfile} templates stored locally, seeding the
+     * 7 official templates automatically if the table is empty.
+     */
+    public List<CricketRulesProfile> getAllRulesProfiles() {
+        List<CricketRulesProfile> list = new ArrayList<>();
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            try (Cursor c = db.query(TABLE_RULES_PROFILES,
+                    new String[]{COLUMN_PROFILE_PAYLOAD},
+                    COLUMN_IS_DELETED + " = 0", null, null, null, COLUMN_PROFILE_NAME + " ASC")) {
+                while (c.moveToNext()) {
+                    list.add(CricketRulesProfile.deserialize(c.getString(0)));
+                }
+            }
+            if (list.isEmpty()) {
+                for (CricketRulesProfile official : CricketRulesProfile.getOfficialTemplates()) {
+                    ContentValues cv = new ContentValues();
+                    cv.put(COLUMN_PROFILE_ID, official.profileId);
+                    cv.put(COLUMN_PROFILE_NAME, official.profileName);
+                    cv.put(COLUMN_PROFILE_VERSION, official.version);
+                    cv.put(COLUMN_PROFILE_PAYLOAD, official.serialize());
+                    cv.put(COLUMN_CLUB_ID, getActiveClubId());
+                    cv.put(COLUMN_UPDATED_AT, System.currentTimeMillis());
+                    cv.put(COLUMN_IS_DELETED, 0);
+                    db.insertWithOnConflict(TABLE_RULES_PROFILES, null, cv, SQLiteDatabase.CONFLICT_REPLACE);
+                    list.add(official);
+                }
+            }
+        } finally {
+            db.close();
+        }
+        return list;
+    }
+
+    /**
+     * Creates or updates a persistent {@code MATCH_SESSIONS} row with an immutable snapshot
+     * of the match's {@link CricketRulesProfile}.
+     */
+    public void saveMatchSessionHeader(MatchState state, int scheduleId) {
+        if (state == null || state.matchUuid == null || state.matchUuid.isEmpty()) {
+            return;
+        }
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            saveMatchSessionHeaderInternal(db, state, scheduleId);
+        } finally {
+            db.close();
+        }
+    }
+
+    private void saveMatchSessionHeaderInternal(SQLiteDatabase db, MatchState state, int scheduleId) {
+        ContentValues cv = new ContentValues();
+        cv.put(COLUMN_SESSION_MATCH_UUID, state.matchUuid);
+        if (scheduleId > 0) {
+            cv.put(COLUMN_SESSION_SCHEDULE_ID, scheduleId);
+        }
+        cv.put(COLUMN_SESSION_TEAM_A_ID, state.teamAId);
+        cv.put(COLUMN_SESSION_TEAM_A_NAME, state.teamAName);
+        cv.put(COLUMN_SESSION_TEAM_B_ID, state.teamBId);
+        cv.put(COLUMN_SESSION_TEAM_B_NAME, state.teamBName);
+        cv.put(COLUMN_SESSION_RULES_SNAPSHOT, state.rulesProfile.serialize());
+        cv.put(COLUMN_SESSION_LIFECYCLE_STATUS, state.lifecycleStatus.name());
+        cv.put(COLUMN_SESSION_CURRENT_INNINGS, state.currentInningsNumber);
+        cv.put(COLUMN_SESSION_RESULT_TEXT, state.resultText);
+        cv.put(COLUMN_CLUB_ID, getActiveClubId());
+        cv.put(COLUMN_UPDATED_AT, System.currentTimeMillis());
+        cv.put(COLUMN_IS_DELETED, 0);
+        cv.put(COLUMN_SYNC_STATUS, SyncRecordModels.STATUS_DIRTY);
+        db.insertWithOnConflict(TABLE_MATCH_SESSIONS, null, cv, SQLiteDatabase.CONFLICT_REPLACE);
+    }
+
+    /**
+     * Validates, persists, and applies a new {@link DeliveryEvent} to the match session,
+     * returning the deterministically updated {@link MatchState}.
+     */
+    public MatchState recordMatchDelivery(MatchState currentState, DeliveryEvent newEvent) {
+        MatchState updated = CricketScoringEngine.appendDeliveryOrThrow(currentState, newEvent);
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            ContentValues cv = new ContentValues();
+            cv.put(COLUMN_EVENT_UUID, newEvent.eventUuid);
+            cv.put(COLUMN_EVENT_MATCH_UUID, updated.matchUuid);
+            cv.put(COLUMN_EVENT_INNINGS, newEvent.inningsNumber);
+            cv.put(COLUMN_EVENT_SEQ, updated.appliedEvents.size());
+            cv.put(COLUMN_EVENT_PAYLOAD, newEvent.serialize());
+            cv.put(COLUMN_UPDATED_AT, newEvent.timestampMillis);
+            cv.put(COLUMN_EVENT_IS_UNDONE, 0);
+            db.insertWithOnConflict(TABLE_MATCH_DELIVERY_EVENTS, null, cv, SQLiteDatabase.CONFLICT_REPLACE);
+            saveMatchSessionHeaderInternal(db, updated, 0);
+        } finally {
+            db.close();
+        }
+        return updated;
+    }
+
+    /**
+     * Undoes the last non-undone delivery event for {@code matchUuid} (marking it {@code IS_UNDONE = 1}
+     * for auditability) and deterministically replays the remaining event history.
+     */
+    public MatchState undoLastMatchDelivery(String matchUuid) {
+        if (matchUuid == null || matchUuid.isEmpty()) {
+            return null;
+        }
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            String lastEventUuid = null;
+            try (Cursor c = db.query(TABLE_MATCH_DELIVERY_EVENTS,
+                    new String[]{COLUMN_EVENT_UUID},
+                    COLUMN_EVENT_MATCH_UUID + " = ? AND " + COLUMN_EVENT_IS_UNDONE + " = 0",
+                    new String[]{matchUuid},
+                    null, null, COLUMN_EVENT_SEQ + " DESC", "1")) {
+                if (c.moveToFirst()) {
+                    lastEventUuid = c.getString(0);
+                }
+            }
+            if (lastEventUuid != null) {
+                ContentValues cv = new ContentValues();
+                cv.put(COLUMN_EVENT_IS_UNDONE, 1);
+                cv.put(COLUMN_UPDATED_AT, System.currentTimeMillis());
+                db.update(TABLE_MATCH_DELIVERY_EVENTS, cv,
+                        COLUMN_EVENT_UUID + " = ?", new String[]{lastEventUuid});
+            }
+        } finally {
+            db.close();
+        }
+        return loadMatchState(matchUuid);
+    }
+
+    /**
+     * Loads and deterministically replays a match session from {@code MATCH_SESSIONS} and
+     * {@code MATCH_DELIVERY_EVENTS}.
+     */
+    public MatchState loadMatchState(String matchUuid) {
+        if (matchUuid == null || matchUuid.isEmpty()) {
+            return null;
+        }
+        SQLiteDatabase db = this.getReadableDatabase();
+        CricketRulesProfile rules = CricketRulesProfile.createStandardT20();
+        int teamAId = 1;
+        String teamAName = "Team A";
+        int teamBId = 2;
+        String teamBName = "Team B";
+        MatchLifecycleStatus status = MatchLifecycleStatus.PROVISIONAL;
+        int savedInnings = 1;
+        boolean foundHeader = false;
+
+        try (Cursor c = db.query(TABLE_MATCH_SESSIONS, null,
+                COLUMN_SESSION_MATCH_UUID + " = ? AND " + COLUMN_IS_DELETED + " = 0",
+                new String[]{matchUuid}, null, null, null)) {
+            if (c.moveToFirst()) {
+                foundHeader = true;
+                teamAId = c.getInt(c.getColumnIndexOrThrow(COLUMN_SESSION_TEAM_A_ID));
+                teamAName = c.getString(c.getColumnIndexOrThrow(COLUMN_SESSION_TEAM_A_NAME));
+                teamBId = c.getInt(c.getColumnIndexOrThrow(COLUMN_SESSION_TEAM_B_ID));
+                teamBName = c.getString(c.getColumnIndexOrThrow(COLUMN_SESSION_TEAM_B_NAME));
+                rules = CricketRulesProfile.deserialize(
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_SESSION_RULES_SNAPSHOT)));
+                savedInnings = c.getInt(c.getColumnIndexOrThrow(COLUMN_SESSION_CURRENT_INNINGS));
+                try {
+                    status = MatchLifecycleStatus.valueOf(
+                            c.getString(c.getColumnIndexOrThrow(COLUMN_SESSION_LIFECYCLE_STATUS)));
+                } catch (Exception ignored) {
+                }
+            }
+        }
+        if (!foundHeader) {
+            return null;
+        }
+
+        List<DeliveryEvent> events = new ArrayList<>();
+        try (Cursor ec = db.query(TABLE_MATCH_DELIVERY_EVENTS,
+                new String[]{COLUMN_EVENT_PAYLOAD},
+                COLUMN_EVENT_MATCH_UUID + " = ? AND " + COLUMN_EVENT_IS_UNDONE + " = 0",
+                new String[]{matchUuid},
+                null, null, COLUMN_EVENT_SEQ + " ASC")) {
+            while (ec.moveToNext()) {
+                events.add(DeliveryEvent.deserialize(ec.getString(0)));
+            }
+        }
+
+        MatchState replayed = CricketScoringEngine.replay(
+                matchUuid, rules, teamAId, teamAName, teamBId, teamBName, events, status);
+        if (savedInnings > replayed.currentInningsNumber) {
+            replayed.currentInningsNumber = savedInnings;
+            replayed.getOrCreateInnings(savedInnings);
+        }
+        return replayed;
+    }
+
+    /**
+     * Loads the most recently updated match session, or {@code null} if none exists.
+     */
+    public MatchState getLatestActiveMatchState() {
+        String latestUuid = null;
+        SQLiteDatabase db = this.getReadableDatabase();
+        try (Cursor c = db.query(TABLE_MATCH_SESSIONS,
+                new String[]{COLUMN_SESSION_MATCH_UUID},
+                COLUMN_IS_DELETED + " = 0", null,
+                null, null, COLUMN_UPDATED_AT + " DESC", "1")) {
+            if (c.moveToFirst()) {
+                latestUuid = c.getString(0);
+            }
+        }
+        return latestUuid != null ? loadMatchState(latestUuid) : null;
+    }
+
+    /**
+     * Confirms or finalizes a match session and commits player batting/bowling career statistics
+     * and team win/loss/draw totals into {@code PLAYER_DETAILS} and {@code TEAM_DETAILS}.
+     */
+    public MatchState confirmAndCommitMatchStats(String matchUuid, boolean finalizeLock) {
+        MatchState state = loadMatchState(matchUuid);
+        if (state == null) {
+            return null;
+        }
+        boolean wasProvisional = (state.lifecycleStatus == MatchLifecycleStatus.PROVISIONAL);
+        state.lifecycleStatus = finalizeLock ? MatchLifecycleStatus.FINALIZED : MatchLifecycleStatus.CONFIRMED;
+        saveMatchSessionHeader(state, 0);
+
+        if (wasProvisional) {
+            // Commit batting & bowling statistics for any matching local players
+            List<PlayerSyncRecord> localPlayers = getAllPlayersForSync();
+            for (InningsScorecard inn : state.inningsList) {
+                for (BatterInningsStat b : inn.batterStats.values()) {
+                    for (PlayerSyncRecord p : localPlayers) {
+                        if (p.localPlayerId == b.playerId
+                                || SyncRecordModels.normalizeName(p.playerName)
+                                .equals(SyncRecordModels.normalizeName(b.playerName))) {
+                            p.totalRuns += b.runs;
+                            p.ballsFaced += b.ballsFaced;
+                            p.matchPlayed += 1;
+                            if (b.runs >= 200) {
+                                p.twoHundred += 1;
+                            } else if (b.runs >= 100) {
+                                p.hundred += 1;
+                            } else if (b.runs >= 50) {
+                                p.fifty += 1;
+                            }
+                            p.updatedAt = System.currentTimeMillis();
+                            upsertPlayerFromRemote(p, false);
+                            break;
+                        }
+                    }
+                }
+                for (BowlerSpellStat bw : inn.bowlerStats.values()) {
+                    for (PlayerSyncRecord p : localPlayers) {
+                        if (p.localPlayerId == bw.playerId
+                                || SyncRecordModels.normalizeName(p.playerName)
+                                .equals(SyncRecordModels.normalizeName(bw.playerName))) {
+                            p.oversBowled += bw.getCompletedOvers();
+                            p.wicketsTaken += bw.wickets;
+                            p.maidenBowled += bw.maidens;
+                            p.widesCount += bw.wides;
+                            p.noBallCount += bw.noBalls;
+                            p.runsGiven += bw.runsConceded;
+                            p.updatedAt = System.currentTimeMillis();
+                            upsertPlayerFromRemote(p, false);
+                            break;
+                        }
+                    }
+                }
+            }
+            // Commit team win/loss/draw if teams exist in TEAM_DETAILS
+            if (state.matchCompleted) {
+                for (TeamSyncRecord t : getAllTeamsForSync()) {
+                    boolean isTeamA = (t.localTeamId == state.teamAId)
+                            || SyncRecordModels.normalizeName(t.teamName)
+                            .equals(SyncRecordModels.normalizeName(state.teamAName));
+                    boolean isTeamB = (t.localTeamId == state.teamBId)
+                            || SyncRecordModels.normalizeName(t.teamName)
+                            .equals(SyncRecordModels.normalizeName(state.teamBName));
+                    if (isTeamA || isTeamB) {
+                        if (state.isTied) {
+                            t.matchDraw += 1;
+                        } else if ((isTeamA && state.winnerTeamId == state.teamAId)
+                                || (isTeamB && state.winnerTeamId == state.teamBId)) {
+                            t.matchWon += 1;
+                        } else {
+                            t.matchLost += 1;
+                        }
+                        t.updatedAt = System.currentTimeMillis();
+                        upsertTeamFromRemote(t, false);
+                    }
+                }
+            }
+        }
+        return state;
     }
 }
 
